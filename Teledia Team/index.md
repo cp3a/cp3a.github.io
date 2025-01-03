@@ -9,7 +9,7 @@ title: Teledia Team
 - [Ritam Dutt](https://shorit.github.io/)
 - [Armineh Nourbakhsh](https://scholar.google.com/citations?user=Itf3MeIAAAAJ&hl=en) (and Researcher at JP Morgan and Chase)
 - [Wenjia Hu](https://scholar.google.com/citations?user=qklNza8AAAAJ&hl=en)
-- [Yiqing Xie[(https://yiqingxyq.github.io/)
+- [Yiqing Xie](https://yiqingxyq.github.io/)
 - [Atharva Naik](https://atharva-naik.github.io/) 
 - [Zhen Wu](https://www.lti.cs.cmu.edu/people/students/wu-zhen.html)
 - [Dongfang Ling](https://www.linkedin.com/in/dongfang-ling/?locale=en_US)
