@@ -20,4 +20,4 @@ Her research group’s highly interdisciplinary work, published in over 330 peer
 
 Dr. Carolyn Rosé is deeply committed to her work but is also pleased to enjoy a full life outside of work with family and friends.  She especially enjoys gardening, cooking, a variety of wool related craft hobbies (spinning, weaving, knitting, and crochet), long walks in the woods, and yoga.
 
-<img src="./weaving-images.jpg" alt="Code Models" width="500">
+<img src="./weaving-images.jpg" alt="Code Models" width="800">
