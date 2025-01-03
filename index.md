@@ -38,8 +38,8 @@ I have the privilege of directing the Teledia lab, a large, interdisciplinary la
 
 ## Recent/Upcoming Invited Talks
  
-- **Keynote Speaker**: 10th International Conference on Computer and Information Science and Technology, Paris, France (CIST 2025) (delivered remotely, August 2025)
-- **Keynote Speaker**: 8th  International Conference on Computational Intelligence and Data Science (ICCIDS 2025) (delivered remotely)
+- **Keynote Speaker**: 10th International Conference on Computer and Information Science and Technology, Paris, France (CIST 2025) August 2025 (remote delivery)
+- **Keynote Speaker**: 8th  International Conference on Computational Intelligence and Data Science (ICCIDS 2025) Spring 2025 (remote delivery)
 - **Invited Speaker**: Minerva Gentner Symposium "Green NLP for Understanding Complex Information", May 21 to 23, 2024, Birlinghoven castle, Germany
 - **Invited Speaker**: Seoul National University, Korea, Spring 2025
 - **Invited Panelist**: Human-Centered Large Language Modeling Workshop, Annual Meeting of the Association for Computational Linguistics, Summer 2024
