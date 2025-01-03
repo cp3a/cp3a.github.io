@@ -19,6 +19,18 @@ title: Teledia Team
 
 ---
 
+## Masters of Intelligent Information Systems Advisees
+
+- Dhruv Gupta, LLM reasoning and KBGQA
+- Keer Xu, AMR Parsing
+- Gayathri Ganesh Lakshmy, Generalizable modeling of conversational interactions
+- Manav Kapadnis, image guided code generation
+- Shubham Gandhi, Low resource code generation 
+- Dhatchi Kunde Govindarajan, Modeling software development practices
+- Lawanya Baghel, Modeling software development practices
+
+---
+
 ## Other Group Affiliates and Staff
 
 - Jill Fain Lehman
