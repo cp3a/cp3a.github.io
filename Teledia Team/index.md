@@ -4,6 +4,14 @@ title: Teledia Team
 ---
 ## PhD and Masters Students
 
+<ul class="people-list">
+  <li class="person">
+    <img src="https://teel.cs.cmu.edu/img/sree.jpg" alt="Sreecharan Sankaranarayanan" class="person-image">
+    <a href="#" class="person-name">Sreecharan Sankaranarayanan</a>
+  </li>
+ 
+</ul>
+
 - <img src="https://teel.cs.cmu.edu/img/sree.jpg" alt="Sreecharan Sankaranarayanan" width="200"> [Sreecharan Sankaranarayanan](https://www.linkedin.com/in/sreecharansankaranarayanan/) Agent support for collaborative software development (on leave at Amazon)
 - [Luke Breitfeller](https://www.lti.cs.cmu.edu/people/students/breitfeller-luke.html) Event ordering and models of authorial intent (and Researcher at NIH Clinical Center)
 - [Ritam Dutt](https://shorit.github.io/) Neural model generalizability
