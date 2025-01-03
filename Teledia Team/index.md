@@ -4,18 +4,18 @@ title: Teledia Team
 ---
 ## PhD and Masters Students
 
-- [Sreecharan Sankaranarayanan](https://www.linkedin.com/in/sreecharansankaranarayanan/) (on leave at Amazon)
-- [Luke Breitfeller](https://www.lti.cs.cmu.edu/people/students/breitfeller-luke.html) (and Researcher at NIH Clinical Center)
-- [Ritam Dutt](https://shorit.github.io/)
-- [Armineh Nourbakhsh](https://scholar.google.com/citations?user=Itf3MeIAAAAJ&hl=en) (and Researcher at JP Morgan and Chase)
-- [Wenjia Hu](https://scholar.google.com/citations?user=qklNza8AAAAJ&hl=en)
-- [Yiqing Xie](https://yiqingxyq.github.io/)
-- [Atharva Naik](https://atharva-naik.github.io/) 
-- [Zhen Wu](https://www.lti.cs.cmu.edu/people/students/wu-zhen.html)
-- [Dongfang Ling](https://www.linkedin.com/in/dongfang-ling/?locale=en_US)
-- [Zhijie Xu](https://scholar.google.com/citations?user=ksZUhSIAAAAJ&hl=en)
-- (new!) [Rosanna Vitiello](https://rosavitiello.github.io/) (co-advised with Yonatan Bisk)
-- (new!) [Mingqian Zheng](https://eeelisa.github.io/) (co-advised with Maarten Sap)
+- [Sreecharan Sankaranarayanan](https://www.linkedin.com/in/sreecharansankaranarayanan/) Agent support for collaborative software development (on leave at Amazon)
+- [Luke Breitfeller](https://www.lti.cs.cmu.edu/people/students/breitfeller-luke.html) Event ordering and models of authorial intent (and Researcher at NIH Clinical Center)
+- [Ritam Dutt](https://shorit.github.io/) Neural model generalizability
+- [Armineh Nourbakhsh](https://scholar.google.com/citations?user=Itf3MeIAAAAJ&hl=en) (and Researcher at JP Morgan and Chase) Multmodal full document understanding and grounded QA
+- [Wenjia Hu](https://scholar.google.com/citations?user=qklNza8AAAAJ&hl=en) Interactive AI, investigating human perception of LLM guardrails
+- [Yiqing Xie](https://yiqingxyq.github.io/) Code model agents
+- [Atharva Naik](https://atharva-naik.github.io/) Collaborative LLM agents that facilitate on-the-job learning about code quality, security and efficiency
+- [Zhen Wu](https://www.lti.cs.cmu.edu/people/students/wu-zhen.html) LLM representation learning, Modeling language from a social perspective 
+- [Dongfang Ling](https://www.linkedin.com/in/dongfang-ling/?locale=en_US) KBGQA
+- [Zhijie Xu](https://scholar.google.com/citations?user=ksZUhSIAAAAJ&hl=en) Agent support for code repository onboarding  
+- (new!) [Rosanna Vitiello](https://rosavitiello.github.io/) Multi-agent simulations of collaboration, computer-supported collaborative learning (co-advised with Yonatan Bisk)
+- (new!) [Mingqian Zheng](https://eeelisa.github.io/) Natural Language Processing and Computational Social Sciences (co-advised with Maarten Sap)
 
 ---
 
