@@ -27,7 +27,7 @@ I have the privilege of directing the Teledia lab, a large, interdisciplinary la
 
 ## Teledia News
 
-- Carolyn Rosé was selected for the Kavcic-Moura Endowed Professorship Language Technologies and Human-Computer Interaction
+- Carolyn Rosé was selected for the Kavcic-Moura Endowed Professorship of Lannguage Technologies and Human-Computer Interaction
 - Carolyn Rosé is Program Co-chair for EMNLP 2025
 - [Sreecharan Sankaranarayanan](https://www.linkedin.com/in/sreecharansankaranarayanan/)  is scheduled to defend his dissertation in Spring 2025
 - [Ritam Dutt](https://shorit.github.io/) was awarded an Honorable Mention at the EMNLP 2024 GenBench workshop
