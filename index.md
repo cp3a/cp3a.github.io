@@ -53,9 +53,10 @@ I have the privilege of directing the Teledia lab, a large, interdisciplinary la
 
 ## Professional Affiliations
 
-- Past President and Inaugural Fellow of [The International Society of the Learning Sciences](https://www.isls.org/)
+- Past President and Inaugural Fellow of [The International Society of the Learning Sciences](https://www.isls.org/) 
 - IEEE Senior Member
 - AAAS Leshner Leadership Fellow for Public Engagement with Science: [AI Cohort](https://www.aaas.org/programs/leshner-institute)
+- Association for Computational Linguistics (CL Journal editorial board)
 
 ---
 
