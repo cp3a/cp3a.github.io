@@ -30,6 +30,7 @@ I have the privilege of directing the Teledia lab, a large, interdisciplinary la
 - Carolyn Rosé was selected for the Kavcic-Moura Endowed Professorship of Lannguage Technologies and Human-Computer Interaction
 - [Atharva Naik](https://atharva-naik.github.io/) is student lead for the CMU team of [the Amazon Trusted AI Challenge](https://www.amazon.science/amazon-nova-ai-challenge-accelerating-the-field-of-generative-ai)
 - Carolyn Rosé is Program Co-chair for EMNLP 2025
+- Carolyn Rosé is guest co-Editor for a special issue of the International Journal of Computer-Supported Collaborative Learing on Artificial Intelligence in Collaborative Learning
 - [Sreecharan Sankaranarayanan](https://www.linkedin.com/in/sreecharansankaranarayanan/) successfully defended his dissertation on March 7, 2025
 - [Ritam Dutt](https://shorit.github.io/) was awarded an Honorable Mention at the EMNLP 2024 GenBench workshop
 - [Atharva Naik](https://atharva-naik.github.io/) was nominated for a Best Paper Award at AIED 2024
@@ -40,6 +41,7 @@ I have the privilege of directing the Teledia lab, a large, interdisciplinary la
 ## Recent/Upcoming Invited Talks
  
 - **Keynote Speaker**: 10th International Conference on Computer and Information Science and Technology, Paris, France (CIST 2025) August 2025 (remote delivery)
+- **Invited Speaker**: Symposium on Exploring Human-AI Interactions Across Various Learning Tasks: Diverse Perspectives on Augmenting Learning, Annual Meeting of the International Society of the Learning Sciences, Helsinki, Finland, June 2025
 - **Keynote Speaker**: 8th  International Conference on Computational Intelligence and Data Science (ICCIDS 2025) Spring 2025 (remote delivery)
 - **Invited Speaker**: Minerva Gentner Symposium "Green NLP for Understanding Complex Information", May 21 to 23, 2024, Birlinghoven castle, Germany
 - **Invited Speaker**: Seoul National University, Korea, Spring 2025
