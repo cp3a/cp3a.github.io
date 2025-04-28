@@ -31,7 +31,7 @@ I have the privilege of directing the Teledia lab, a large, interdisciplinary la
 - [Atharva Naik](https://atharva-naik.github.io/) is student lead for the CMU team of [the Amazon Trusted AI Challenge](https://www.amazon.science/amazon-nova-ai-challenge-accelerating-the-field-of-generative-ai)
 - Carolyn Rosé is Program Co-chair for EMNLP 2025
 - Carolyn Rosé is guest co-Editor for a special issue of the International Journal of Computer-Supported Collaborative Learing on Artificial Intelligence in Collaborative Learning
-- [Armineh Nourbakhsh]([https://www.linkedin.com/in/sreecharansankaranarayanan/](https://scholar.google.com/citations?user=Itf3MeIAAAAJ&hl=en) successfully defended her dissertation on March 18, 2025
+- [Armineh Nourbakhsh](https://scholar.google.com/citations?user=Itf3MeIAAAAJ&hl=en) successfully defended her dissertation on March 18, 2025
 - [Sreecharan Sankaranarayanan](https://www.linkedin.com/in/sreecharansankaranarayanan/) successfully defended his dissertation on March 7, 2025
 - [Ritam Dutt](https://shorit.github.io/) was awarded an Honorable Mention at the EMNLP 2024 GenBench workshop
 - [Atharva Naik](https://atharva-naik.github.io/) was nominated for a Best Paper Award at AIED 2024
