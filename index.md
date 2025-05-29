@@ -43,7 +43,6 @@ I have the privilege of directing the Teledia lab, a large, interdisciplinary la
 
 - **Keynote Speaker**: Global Smart Education Conference (GSE2025), co-organized by Beijing Normal University (BNU) and UNESCO Institute for Information Technologies in Education (UNESCO IITE) August 2025 (remote delivery)
 - **Keynote Speaker**: 10th International Conference on Computer and Information Science and Technology, Paris, France (CIST 2025) August 2025 (remote delivery)
-- **Keynote Speaker**: International Conference on AI in Healthcare, July 2025, https://researchsummits.com/conf12.html 
 - **Invited Speaker**: Symposium on Exploring Human-AI Interactions Across Various Learning Tasks: Diverse Perspectives on Augmenting Learning, Annual Meeting of the International Society of the Learning Sciences, Helsinki, Finland, June 2025
 - **Keynote Speaker**: 8th  International Conference on Computational Intelligence and Data Science (ICCIDS 2025) Spring 2025 (remote delivery)
 - **Invited Speaker**: Minerva Gentner Symposium "Green NLP for Understanding Complex Information", May 21 to 23, 2024, Birlinghoven castle, Germany
