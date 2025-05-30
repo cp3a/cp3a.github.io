@@ -41,6 +41,7 @@ I have the privilege of directing the Teledia lab, a large, interdisciplinary la
 
 ## Recent/Upcoming Invited Talks
 
+- **Keynote Speaker**: International Conference on Business Intelligence and Data Science (ICBIDS'25), September 16-17, 2025 (remote delivery)
 - **Keynote Speaker**: Global Smart Education Conference (GSE2025), co-organized by Beijing Normal University (BNU) and UNESCO Institute for Information Technologies in Education (UNESCO IITE) August 2025 (remote delivery)
 - **Keynote Speaker**: 10th International Conference on Computer and Information Science and Technology, Paris, France (CIST 2025) August 2025 (remote delivery)
 - **Invited Speaker**: Symposium on Exploring Human-AI Interactions Across Various Learning Tasks: Diverse Perspectives on Augmenting Learning, Annual Meeting of the International Society of the Learning Sciences, Helsinki, Finland, June 2025
