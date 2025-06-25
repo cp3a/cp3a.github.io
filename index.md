@@ -28,7 +28,7 @@ I have the privilege of directing the Teledia lab, a large, interdisciplinary la
 ## Teledia News
 
 - Carolyn Rosé was selected for the Kavcic-Moura Endowed Professorship of Language Technologies and Human-Computer Interaction
-- [Atharva Naik](https://atharva-naik.github.io/) is student lead for the CMU team of [the Amazon Trusted AI Challenge](https://www.amazon.science/amazon-nova-ai-challenge-accelerating-the-field-of-generative-ai)
+- [Atharva Naik](https://atharva-naik.github.io/) is student lead for the CMU team of [the Amazon Trusted AI Challenge](https://www.amazon.science/amazon-nova-ai-challenge-accelerating-the-field-of-generative-ai) We are looking forward to the [upcoming final tournament](https://www.amazon.science/nova-ai-challenge/finalist-teams-advance-in-the-amazon-nova-ai-challenge-trusted-ai-track) 
 - Carolyn Rosé is Program Co-chair for EMNLP 2025
 - Carolyn Rosé is guest co-Editor for a special issue of the International Journal of Computer-Supported Collaborative Learing on Artificial Intelligence in Collaborative Learning
 - [Armineh Nourbakhsh](https://scholar.google.com/citations?user=Itf3MeIAAAAJ&hl=en) successfully defended her dissertation on March 18, 2025
