@@ -13,7 +13,7 @@ title: Teledia Team
 - <img src="https://media.licdn.com/dms/image/v2/D4D03AQFEvK71a0nxeQ/profile-displayphoto-shrink_800_800/B4DZYp2eYeHwAc-/0/1744458869055?e=1769644800&v=beta&t=Mni8x6KwB4M0ChRNyMTcJNW22K7OtcfifuFeRGVRVHc" alt="Nachiket Kotalwar" width="200"> <br>[Nachiket Kotalwar](https://nachiketdk.github.io/), LTI PhD student, Personalized Alignment and Human-AI Collaboration
 
 - <img src="https://hcii.cmu.edu/sites/default/files/styles/person_portrait_image/public/2025-07/Hyeongdon_Moon.jpeg.webp?h=531cbe1c&itok=P32u_KHY" alt="Doni Moon" width="200"> <br>[Doni Moon](https://hcii.cmu.edu/people/hyeongdon-doni-moon), HCII PhD student, Cognitive Modeling
-- <img src="https://avatars.githubusercontent.com/u/61871314?v=4" alt="Hyun Ryu" width="200"> <br>[https://avatars.githubusercontent.com/u/61871314?v=4), Visiting Masters student, LLM Reasoning and Argumentation (co-advised with Sean Welleck)
+- <img src="https://avatars.githubusercontent.com/u/61871314?v=4" alt="Hyun Ryu" width="200"> <br>[Hyun Ryu](https://avatars.githubusercontent.com/u/61871314?v=4), Visiting Masters student, LLM Reasoning and Argumentation (co-advised with Sean Welleck)
 ---
 
 ## Masters of Intelligent Information Systems Advisees
