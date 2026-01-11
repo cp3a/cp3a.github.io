@@ -27,9 +27,10 @@ I have the privilege of directing the Teledia lab, a large, interdisciplinary la
 
 ## Teledia News
 
-- Carolyn Rosé was selected for the Kavcic-Moura Endowed Professorship of Language Technologies and Human-Computer Interaction
-- [Atharva Naik](https://atharva-naik.github.io/) is student lead for the CMU team of [the Amazon Trusted AI Challenge](https://www.amazon.science/amazon-nova-ai-challenge-accelerating-the-field-of-generative-ai) We are looking forward to the [upcoming final tournament](https://www.amazon.science/nova-ai-challenge/finalist-teams-advance-in-the-amazon-nova-ai-challenge-trusted-ai-track) 
-- Carolyn Rosé is Program Co-chair for EMNLP 2025
+- Zhen Wu et al. were awarded an Outstanding Paper Award at AACL-IJCNLP
+- Luke Breitfeller will defend his dissertation on January 15
+- Ritam Dutt will defend his dissertation on February 9
+- Carolyn Rosé served as Program Co-Chair for EMNLP 2025
 - Carolyn Rosé is guest co-Editor for a special issue of the International Journal of Computer-Supported Collaborative Learing on Artificial Intelligence in Collaborative Learning
 - [Armineh Nourbakhsh](https://scholar.google.com/citations?user=Itf3MeIAAAAJ&hl=en) successfully defended her dissertation on March 18, 2025
 - [Sreecharan Sankaranarayanan](https://www.linkedin.com/in/sreecharansankaranarayanan/) successfully defended his dissertation on March 7, 2025
@@ -41,16 +42,12 @@ I have the privilege of directing the Teledia lab, a large, interdisciplinary la
 
 ## Recent/Upcoming Invited Talks
 
+- **Invited Speaker**: AI beyond ChatGPT, 5th International conference on Science and Technology Education, October 1-2 2026, Portugal (to be delivered remotely)
+- **Keynote Speaker**: Second International Workshop on Hybrid Intelligence: Human-AI Collaboration and Learning, Learning Analytics and Knowledge Conference, Bergen, Norway, April 27, 2026 
+- **Invited Speaker**: Computational Social Science Workshop, University of Chicago, March 2026
+- **Table Talk Speaker**: AI2, February 2026
+- **Invited Panelist**:  First Workshop on LLM Persona Modeling , NeurIPS 2025, Mexico City, December 2025 (remote delivery)
 - **Keynote Speaker**: International Conference on Business Intelligence and Data Science (ICBIDS'25), September 16-17, 2025 (remote delivery)
-- **Keynote Speaker**: Global Smart Education Conference (GSE2025), co-organized by Beijing Normal University (BNU) and UNESCO Institute for Information Technologies in Education (UNESCO IITE) August 2025 (remote delivery)
-- **Keynote Speaker**: 10th International Conference on Computer and Information Science and Technology, Paris, France (CIST 2025) August 2025 (remote delivery)
-- **Invited Speaker**: Symposium on Exploring Human-AI Interactions Across Various Learning Tasks: Diverse Perspectives on Augmenting Learning, Annual Meeting of the International Society of the Learning Sciences, Helsinki, Finland, June 2025
-- **Keynote Speaker**: 8th  International Conference on Computational Intelligence and Data Science (ICCIDS 2025) Spring 2025 (remote delivery)
-- **Invited Speaker**: Minerva Gentner Symposium "Green NLP for Understanding Complex Information", May 21 to 23, 2025, Birlinghoven castle, Germany
-- **Invited Speaker**: IPAI Distinguished Seminar talk, Seoul National University, Korea, Spring 2025
-- **Invited Panelist**: Human-Centered Large Language Modeling Workshop, Annual Meeting of the Association for Computational Linguistics, Summer 2024
-- **Keynote Speaker**: Annual Meeting of the International Educational Data Mining Society (EDM), July 16, 2024
-
 ---
 
 ## Professional Affiliations
