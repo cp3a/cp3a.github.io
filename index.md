@@ -48,6 +48,7 @@ I have the privilege of directing the Teledia lab, a large, interdisciplinary la
 - **Table Talk Speaker**: AI2, February 2026
 - **Invited Panelist**:  First Workshop on LLM Persona Modeling , NeurIPS 2025, Mexico City, December 2025 (remote delivery)
 - **Keynote Speaker**: International Conference on Business Intelligence and Data Science (ICBIDS'25), September 16-17, 2025 (remote delivery)
+- 
 ---
 
 ## Professional Affiliations
