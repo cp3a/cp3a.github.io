@@ -12,7 +12,7 @@ title: Teledia Team
 - <img src="https://eeelisa.github.io/assets/img/prof_pic.jpg?5b919ee8a9514180596c0968c5946ee3" alt="Mingqian Zheng" width="200"> <br> [Mingqian Zheng](https://eeelisa.github.io/), LTI PhD student, Natural Language Processing and Computational Social Sciences (co-advised with Maarten Sap)
 - <img src="https://nachiketdk.github.io/images/square_img.jpg" alt="Nachiket Kotalwar" width="200"> <br>[Nachiket Kotalwar](https://nachiketdk.github.io/), LTI PhD student, Personalized Alignment and Human-AI Collaboration
 - <img src="https://hcii.cmu.edu/sites/default/files/styles/person_portrait_image/public/2025-07/Hyeongdon_Moon.jpeg.webp?h=531cbe1c&itok=P32u_KHY" alt="Doni Moon" width="200"> <br>[Doni Moon](https://hcii.cmu.edu/people/hyeongdon-doni-moon), HCII PhD student, Cognitive Modeling (co-advised with John Stamper)
-- <img src="https://avatars.githubusercontent.com/u/61871314?v=4" alt="Hyun Ryu" width="200"> <br> [Hyun Ryu] (https://avatars.githubusercontent.com/u/61871314?v=4), Visiting Masters student, LLM Reasoning and Argumentation (co-advised with Sean Welleck)
+- <img src="https://avatars.githubusercontent.com/u/61871314?v=4" alt="Hyun Ryu" width="200"> <br> [Hyun Ryu](https://avatars.githubusercontent.com/u/61871314?v=4), Visiting Masters student, LLM Reasoning and Argumentation (co-advised with Sean Welleck)
   
 ---
 
