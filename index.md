@@ -42,10 +42,10 @@ I have the privilege of directing the Teledia lab, a large, interdisciplinary la
 
 ## Recent/Upcoming Invited Talks
 
-- **Invited Speaker**: AI beyond ChatGPT, 5th International conference on Science and Technology Education, October 1-2 2026, Portugal (to be delivered remotely)
+- **Keynote Speaker**: AI beyond ChatGPT, 5th International conference on Science and Technology Education, October 1-2 2026, Portugal (to be delivered remotely)
 - **Keynote Speaker**: Second International Workshop on Hybrid Intelligence: Human-AI Collaboration and Learning, Learning Analytics and Knowledge Conference, Bergen, Norway, April 27, 2026 
 - **Invited Speaker**: Computational Social Science Workshop, University of Chicago, March 2026
-- **Table Talk Speaker**: AI2, February 2026
+- **Company Speaker**: AI2, February 2026
 - **Invited Panelist**:  First Workshop on LLM Persona Modeling , NeurIPS 2025, Mexico City, December 2025 (remote delivery)
 - **Keynote Speaker**: International Conference on Business Intelligence and Data Science (ICBIDS'25), September 16-17, 2025 (remote delivery)
   
