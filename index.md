@@ -27,7 +27,7 @@ I have the privilege of directing the Teledia lab, a large, interdisciplinary la
 
 ## Teledia News
 
-- Shubham Gandhu and Nachiket Kotalwar serve as student team leads for the [2026 Amazon Nova AI Challenge](https://www.amazon.science/nova-ai-challenge/amazon-nova-ai-challenge-returns-with-nova-forge-access-for-competing-teams)
+- Shubham Gandhu and Nachiket Kotalwar serve as student team leads for the [2026 Amazon Nova AI Challenge](https://www.amazon.science/nova-ai-challenge/amazon-nova-ai-challenge-returns-with-nova-forge-access-for-competing-teams) (with Carolyn Rose and Lei Li serving as faculty leads)
 - Zhen Wu et al. were awarded an Outstanding Paper Award at AACL-IJCNLP
 - Luke Breitfeller will defend his dissertation on January 15
 - Ritam Dutt will defend his dissertation on February 9
