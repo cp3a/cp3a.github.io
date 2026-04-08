@@ -13,6 +13,7 @@ title: Teledia Team
 - <img src="https://nachiketdk.github.io/images/square_img.jpg" alt="Nachiket Kotalwar" width="200"> <br>[Nachiket Kotalwar](https://nachiketdk.github.io/), LTI PhD student, Personalized Alignment and Human-AI Collaboration
 - <img src="https://hcii.cmu.edu/sites/default/files/styles/person_portrait_image/public/2025-07/Hyeongdon_Moon.jpeg.webp?h=531cbe1c&itok=P32u_KHY" alt="Doni Moon" width="200"> <br>[Doni Moon](https://hcii.cmu.edu/people/hyeongdon-doni-moon), HCII PhD student, Cognitive Modeling (co-advised with John Stamper)
 - <img src="https://avatars.githubusercontent.com/u/61871314?v=4" alt="Hyun Ryu" width="200"> <br> [Hyun Ryu](https://avatars.githubusercontent.com/u/61871314?v=4), Visiting Masters student, LLM Reasoning and Argumentation (co-advised with Sean Welleck)
+- - <img src="https://media.licdn.com/dms/image/v2/D4D03AQFRIiGdbpgpKA/profile-displayphoto-shrink_400_400/profile-displayphoto-shrink_400_400/0/1713621866452?e=1777507200&v=beta&t=Gva9qxJ28qMjr-4RCirpCXM5MivceZnzOhwovdlM2iQ" alt="Shubham Gandhi" width="200"> <br> [Shubham Gandhi]([http](https://www.linkedin.com/in/shubham-gandhi-70536619a/)), rising PhD student, LLM Efficiency, Strong-Weak model collaboration
   
 ---
 
