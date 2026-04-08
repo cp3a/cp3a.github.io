@@ -27,10 +27,11 @@ I have the privilege of directing the Teledia lab, a large, interdisciplinary la
 
 ## Teledia News
 
-- Shubham Gandhu and Nachiket Kotalwar serve as student team leads for the [2026 Amazon Nova AI Challenge](https://www.amazon.science/nova-ai-challenge/amazon-nova-ai-challenge-returns-with-nova-forge-access-for-competing-teams) (with Carolyn Rose and Lei Li serving as faculty leads)
+- YiQing Xie will present her dissertation proposal on May 15
+- Shubham Gandhi and Nachiket Kotalwar serve as student team leads for the [2026 Amazon Nova AI Challenge](https://www.amazon.science/nova-ai-challenge/amazon-nova-ai-challenge-returns-with-nova-forge-access-for-competing-teams) (with Carolyn Rose and Lei Li serving as faculty leads)
 - Zhen Wu et al. were awarded an Outstanding Paper Award at AACL-IJCNLP
-- Luke Breitfeller will defend his dissertation on January 15
-- Ritam Dutt will defend his dissertation on February 9
+- Luke Breitfeller successfully defended his dissertation on January 15
+- Ritam Dutt successfully defended his dissertation his dissertation on February 9
 - Carolyn Rosé served as Program Co-Chair for EMNLP 2025
 - Carolyn Rosé is guest co-Editor for a special issue of the International Journal of Computer-Supported Collaborative Learing on Artificial Intelligence in Collaborative Learning
 - [Armineh Nourbakhsh](https://scholar.google.com/citations?user=Itf3MeIAAAAJ&hl=en) successfully defended her dissertation on March 18, 2025
