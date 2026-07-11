@@ -44,6 +44,7 @@ I have the privilege of directing the Teledia lab, a large, interdisciplinary la
 
 ## Recent/Upcoming Invited Talks
 
+- **Invited Plenary Speaker**, Workshop on Human-Centered ML, Apple Park, August 2026
 - **Keynote Speaker**: AI for Education Singapore Conference (AIFE 2026), to be held from 16-18 November 2026 at the National Institute of Education (NIE), Nanyang Technological University (NTU), Singapore.
 - **Keynote Speaker**: AI beyond ChatGPT, 5th International conference on Science and Technology Education, October 1-2 2026, Portugal (to be delivered remotely)
 - **Keynote Speaker**: Second International Workshop on Hybrid Intelligence: Human-AI Collaboration and Learning, Learning Analytics and Knowledge Conference, Bergen, Norway, April 27, 2026 
