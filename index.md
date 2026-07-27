@@ -45,6 +45,7 @@ I have the privilege of directing the Teledia lab, a large, interdisciplinary la
 ## Recent/Upcoming Invited Talks
 
 - **Keynote Speaker**: International Conference on Natural Language Processing (ICON), Guwahati, India, December 2026
+- **Distinguished Keynote Speaker**: 13th International Conference on Signal Processing and Integrated Networks (SPIN 2027) on 25-26 February 2027 through Hybrid Mode at Amity University, Noida, UP, India
 - **Invited Plenary Speaker**, Workshop on Human-Centered ML, Apple Park, August 2026
 - **Keynote Speaker**: AI for Education Singapore Conference (AIFE 2026), to be held from 16-18 November 2026 at the National Institute of Education (NIE), Nanyang Technological University (NTU), Singapore.
 - **Keynote Speaker**: AI beyond ChatGPT, 5th International conference on Science and Technology Education, October 1-2 2026, Portugal (to be delivered remotely)
