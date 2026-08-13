@@ -27,6 +27,7 @@ I have the privilege of directing the Teledia lab, a large, interdisciplinary la
 
 ## Teledia News
 
+- Carolyn Rosé is an invited participant for the Amazon Workshop on Agentic Software Development — Methodology, Technology, and Curriculum
 - Carolyn Rosé won the 2026 ETRD/AECT Distinguished Development Award
 - YiQing Xie will present her dissertation proposal on May 15
 - Shubham Gandhi and Nachiket Kotalwar serve as student team leads for the [2026 Amazon Nova AI Challenge](https://www.amazon.science/nova-ai-challenge/amazon-nova-ai-challenge-returns-with-nova-forge-access-for-competing-teams) (with Carolyn Rosé and Lei Li serving as faculty leads)
