@@ -1,3 +1,7 @@
+---
+layout: home
+title: ACL Leadership Roles
+---
 
 # Service to the Association for Computational Linguistics
 
