@@ -1,9 +1,5 @@
----
-layout: default
-title: Service to the Association for Computational Linguistics
----
 
-# Service
+# Service to the Association for Computational Linguistics
 
 Computational Linguistics Journal, member of Computational Linguistics (CL) reviewer team from August 1, 2024 – June 30, 2026
 
@@ -42,7 +38,10 @@ Scientific Committee for LREC 2006
 Program Committee for the Association for Computational Linguistics (ACL) 2005 Workshop on Educational Applications of NLP
 
 Program Committee for ScaNaLU: Workshop on Scalable Natural Language Understanding technology, 2004
- Organizing Committee for HLT-NAACL 2003 workshop on Building Educational Applications Using Natural Language Processing
+
+Organizing Committee for HLT-NAACL 2003 workshop on Building Educational Applications Using Natural Language Processing
+
 Thematic Session Co-Chair, 37th Annual Meeting of the Association for Computational Linguistics, 1999.
- Review Committee member, Student Session of the 35th Annual Meeting of the Association for Computational Linguistics, 1997.
+
+Review Committee member, Student Session of the 35th Annual Meeting of the Association for Computational Linguistics, 1997.
 
