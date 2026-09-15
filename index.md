@@ -16,6 +16,7 @@ Pittsburgh, PA 15213-3891
 Email: [cprose@cs.cmu.edu](mailto:cprose@cs.cmu.edu)  
 Phone: +1 (412) 268-7130  
 Fax: +1 (412) 268-6298  
+CV: [My Full CV](https://cp3a.github.io//assets/CV-Rose-2026-Public.pdf)
 
 ---
 
