@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Activity 2 — Twill & Block Weave Simulator</title>
+<style>
+  :root {
+    --ink: #1C1C1C;
+    --paper: #F8F6F2;
+    --accent: #4A7B6F;
+    --accent2: #C4722A;
+    --muted: #888;
+    --border: #DDD;
+    --card: #FFFFFF;
+    --sage: #4A7B6F;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink: #EFEFEF; --paper: #1A1D1C; --accent: #6AADA0; --accent2: #E0935A;
+      --muted: #999; --border: #333; --card: #242926; --sage: #6AADA0;
+    }
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Georgia', serif; background: var(--paper); color: var(--ink); min-height: 100vh; padding: env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px); }
+  header { background: #2D4A3E; color: #fff; padding: 1.4rem 2rem 1.2rem; }
+  header .eyebrow { font-family: Arial, sans-serif; font-size: 0.78rem; letter-spacing: 0.06em; color: #A8C5B8; margin-bottom: 0.35rem; }
+  header h1 { font-size: clamp(1.3rem,3vw,1.9rem); font-weight: normal; }
+  header p { font-family: Arial, sans-serif; font-size: 0.88rem; color: #C8DDD8; margin-top: 0.5rem; max-width: 60ch; }
+  .main { display: grid; grid-template-columns: 320px 1fr; gap: 1.5rem; max-width: 1200px; margin: 0 auto; padding: 1.5rem; }
+  @media (max-width: 780px) { .main { grid-template-columns: 1fr; } }
+  .panel { background: var(--card); border: 1px solid var(--border); border-radius: 4px; padding: 1.3rem; }
+  .panel h2 { font-size: 0.95rem; font-weight: bold; color: var(--sage); margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; font-family: Arial, sans-serif; }
+  label { font-family: Arial, sans-serif; font-size: 0.82rem; color: var(--ink); display: block; margin-bottom: 0.3rem; }
+  input[type=color] { width: 48px; height: 36px; border: 1px solid var(--border); border-radius: 3px; cursor: pointer; background: none; padding: 2px; }
+  .swatch-row { display: flex; gap: 0.4rem; flex-wrap: wrap; margin: 0.4rem 0 0.8rem; }
+  .swatch { width: 26px; height: 26px; border-radius: 3px; cursor: pointer; border: 2px solid transparent; flex-shrink: 0; }
+  .swatch:hover { outline: 2px solid var(--accent); }
+  .color-pair { display: flex; gap: 0.8rem; align-items: flex-start; margin-bottom: 0.8rem; }
+  .structure-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 1rem; }
+  .struct-btn { font-family: Arial, sans-serif; font-size: 0.78rem; padding: 0.5rem 0.6rem; border: 1px solid var(--border); border-radius: 3px; cursor: pointer; background: var(--paper); color: var(--ink); line-height: 1.3; transition: all 0.15s; text-align: left; }
+  .struct-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .struct-btn small { display: block; color: inherit; opacity: 0.75; font-size: 0.7rem; }
+  canvas { display: block; width: 100%; image-rendering: pixelated; border: 1px solid var(--border); border-radius: 2px; }
+  .insight { background: color-mix(in srgb, var(--accent) 12%, transparent); border-left: 3px solid var(--accent); padding: 0.7rem 1rem; font-family: Arial, sans-serif; font-size: 0.82rem; line-height: 1.55; border-radius: 0 3px 3px 0; margin: 0.8rem 0; }
+  .contrast-row { display: flex; gap: 1rem; align-items: center; margin: 0.6rem 0; }
+  .c-swatch { width: 36px; height: 36px; border-radius: 3px; border: 1px solid var(--border); flex-shrink: 0; }
+  .meter-bar { flex: 1; height: 8px; border-radius: 4px; background: var(--border); overflow: hidden; }
+  .meter-fill { height: 100%; background: var(--accent2); border-radius: 4px; transition: width 0.3s; }
+  .section-title { font-family: Arial, sans-serif; font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.4rem; margin-top: 0.6rem; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  @media (max-width: 600px) { .two-col { grid-template-columns: 1fr; } }
+  .full-width { grid-column: 1 / -1; }
+  textarea { width: 100%; min-height: 65px; border: 1px solid var(--border); border-radius: 3px; padding: 0.5rem; font-family: Arial, sans-serif; font-size: 0.82rem; resize: vertical; background: var(--paper); color: var(--ink); margin-bottom: 0.7rem; }
+  textarea:focus { outline: 2px solid var(--accent); }
+  .obs-q { font-family: Arial, sans-serif; font-size: 0.82rem; font-weight: bold; margin-bottom: 0.3rem; color: var(--ink); }
+  .obs-q .q-num { display: inline-block; background: var(--accent); color: #fff; border-radius: 50%; width: 1.4em; height: 1.4em; text-align: center; line-height: 1.4em; font-size: 0.72rem; margin-right: 0.35rem; }
+  .tab-row { display: flex; border-bottom: 2px solid var(--border); margin-bottom: 1rem; }
+  .tab { font-family: Arial, sans-serif; font-size: 0.82rem; padding: 0.5rem 1rem; cursor: pointer; border: none; background: none; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -2px; }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: bold; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+  .treadling-grid { display: flex; flex-direction: column; gap: 2px; margin-bottom: 0.8rem; }
+  .treadle-row { display: flex; gap: 2px; align-items: center; }
+  .treadle-cell { width: 22px; height: 22px; border: 1px solid var(--border); border-radius: 2px; cursor: pointer; transition: background 0.1s; flex-shrink: 0; }
+  .treadle-cell.on { background: var(--sage); border-color: var(--sage); }
+  .treadle-label { font-family: Arial, sans-serif; font-size: 0.72rem; color: var(--muted); width: 50px; text-align: right; padding-right: 6px; flex-shrink: 0; }
+  .mini-canvas-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 0.8rem; }
+  .mini-label { font-family: Arial, sans-serif; font-size: 0.75rem; color: var(--muted); text-align: center; margin-top: 0.3rem; }
+  hr { border: none; border-top: 1px solid var(--border); margin: 1rem 0; }
+  .badge { display: inline-block; background: var(--accent); color: #fff; border-radius: 3px; font-family: Arial, sans-serif; font-size: 0.72rem; padding: 0.1rem 0.4rem; margin-left: 0.3rem; }
+  .exp-btn { display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0.7rem; margin-bottom: 0.4rem; border: 1px solid var(--border); background: var(--paper); color: var(--ink); border-radius: 3px; cursor: pointer; font-family: Arial, sans-serif; font-size: 0.8rem; width: 100%; text-align: left; }
+  .exp-btn:hover { border-color: var(--accent); }
+</style>
+</head>
+<body>
+<header>
+  <div class="eyebrow">Activity 2 — 4-Shaft Structures</div>
+  <h1>Twill & Block Weave Colour Simulator</h1>
+  <p>Explore how the diagonal twill line and block structure distribute colour differently from plain weave. Edit the treadling to create your own patterns.</p>
+</header>
+
+<div class="main">
+  <!-- Controls -->
+  <div class="panel">
+    <h2>Colour Controls</h2>
+    <div class="color-pair">
+      <div>
+        <div class="section-title">Warp colour</div>
+        <input type="color" id="warpColor" value="#1A3A5C">
+        <div class="swatch-row" id="warpSwatches"></div>
+      </div>
+      <div>
+        <div class="section-title">Weft colour</div>
+        <input type="color" id="weftColor" value="#C4722A">
+        <div class="swatch-row" id="weftSwatches"></div>
+      </div>
+    </div>
+
+    <hr>
+    <h2>Structure</h2>
+    <div class="structure-grid">
+      <button class="struct-btn active" data-struct="twill22">2/2 Twill<small>Balanced — diagonal</small></button>
+      <button class="struct-btn" data-struct="twill31">3/1 Twill<small>Warp dominant</small></button>
+      <button class="struct-btn" data-struct="herringbone">Herringbone<small>Reversed twill</small></button>
+      <button class="struct-btn" data-struct="huck">Huck Lace<small>Spot floats</small></button>
+      <button class="struct-btn" data-struct="msOs">M's and O's<small>Block contrast</small></button>
+      <button class="struct-btn" data-struct="rosepath">Rosepath<small>Diamond figure</small></button>
+      <button class="struct-btn" data-struct="custom">Custom treadling<small>Edit below</small></button>
+    </div>
+
+    <hr>
+    <h2>Custom Treadling <span class="badge">interactive</span></h2>
+    <p style="font-family:Arial,sans-serif;font-size:0.78rem;color:var(--muted);margin-bottom:0.6rem">Click cells to toggle shafts on/off for each pick (row). Shaft up = warp shows (dark).</p>
+    <div class="treadling-grid" id="treadlingGrid"></div>
+
+    <hr>
+    <h2>Contrast Analysis</h2>
+    <div class="contrast-row">
+      <div class="c-swatch" id="warpSwatch"></div>
+      <div style="flex:1">
+        <div style="font-family:Arial,sans-serif;font-size:0.75rem;color:var(--muted)">Warp / Weft contrast</div>
+        <div class="meter-bar"><div class="meter-fill" id="contrastFill"></div></div>
+      </div>
+      <div class="c-swatch" id="weftSwatch"></div>
+    </div>
+
+    <div class="insight" id="insight">Select a structure and colours to see analysis.</div>
+
+    <div class="section-title">Optical mix colour</div>
+    <div style="display:flex;align-items:center;gap:0.8rem;margin-bottom:0.5rem">
+      <div class="c-swatch" id="mixSwatch" style="width:48px;height:48px"></div>
+      <div style="font-family:Arial,sans-serif;font-size:0.82rem;color:var(--ink)" id="mixLabel"></div>
+    </div>
+  </div>
+
+  <!-- Right: drawdown + analysis -->
+  <div style="display:flex;flex-direction:column;gap:1.5rem">
+    <div class="panel">
+      <h2>Woven Drawdown <span id="structLabel" style="font-weight:normal;color:var(--muted);font-size:0.85rem"></span></h2>
+      <canvas id="drawdown" width="560" height="400"></canvas>
+      <p style="font-family:Arial,sans-serif;font-size:0.75rem;color:var(--muted);margin-top:0.4rem" id="drawdownNote">Dark squares = warp up (warp colour shows). Light = weft up (weft colour shows).</p>
+    </div>
+
+    <div class="panel">
+      <h2>Side-by-Side Comparison</h2>
+      <p style="font-family:Arial,sans-serif;font-size:0.78rem;color:var(--muted);margin-bottom:0.8rem">The same colour pair shown in four structures simultaneously — see how float length changes colour dominance</p>
+      <div class="mini-canvas-wrap">
+        <div>
+          <canvas id="mini1" width="240" height="160"></canvas>
+          <div class="mini-label">Plain 1/1</div>
+        </div>
+        <div>
+          <canvas id="mini2" width="240" height="160"></canvas>
+          <div class="mini-label">2/2 Twill</div>
+        </div>
+        <div>
+          <canvas id="mini3" width="240" height="160"></canvas>
+          <div class="mini-label">3/1 Twill (warp dominant)</div>
+        </div>
+        <div>
+          <canvas id="mini4" width="240" height="160"></canvas>
+          <div class="mini-label">M's & O's (block)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel full-width">
+      <h2>Observation Journal</h2>
+      <div class="tab-row">
+        <button class="tab active" data-tab="obs">Observations</button>
+        <button class="tab" data-tab="exp">Experiments</button>
+        <button class="tab" data-tab="compare">Compare Structures</button>
+      </div>
+      <div class="tab-panel active" id="tab-obs">
+        <div class="two-col">
+          <div>
+            <div class="obs-q"><span class="q-num">1</span> In the 2/2 twill, does the diagonal line appear to advance or recede? What colour seems to sit on top?</div>
+            <textarea placeholder="Consider: which colour seems closer to you, warp or weft?"></textarea>
+            <div class="obs-q"><span class="q-num">2</span> Try a complementary pair (e.g. navy + orange). Describe what happens at the twill diagonal compared to plain weave.</div>
+            <textarea placeholder="Is there more or less vibration than in plain weave? Why might longer floats change this?"></textarea>
+          </div>
+          <div>
+            <div class="obs-q"><span class="q-num">3</span> Switch to M's and O's. Can you see the block structure clearly? What happens if you use very similar colours?</div>
+            <textarea placeholder="Note: at what contrast level does the block structure 'disappear'?"></textarea>
+            <div class="obs-q"><span class="q-num">4</span> In the Rosepath structure, do the diamond figures advance or recede? Does value contrast or hue contrast have a stronger effect?</div>
+            <textarea placeholder="Try the same hue pair with high vs. low value contrast…"></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="tab-panel" id="tab-exp">
+        <div class="two-col">
+          <div>
+            <div style="font-family:Arial,sans-serif;font-size:0.82rem;font-weight:bold;margin-bottom:0.5rem">Suggested colour experiments:</div>
+            <div id="expList"></div>
+          </div>
+          <div>
+            <div style="font-family:Arial,sans-serif;font-size:0.82rem;font-weight:bold;margin-bottom:0.5rem">What to observe:</div>
+            <ul style="font-family:Arial,sans-serif;font-size:0.82rem;line-height:1.7;padding-left:1.2rem;color:var(--ink)">
+              <li><strong>Twill diagonal:</strong> With high value contrast the twill line appears to be a raised 3D rib</li>
+              <li><strong>Block boundaries:</strong> In M's and O's the boundary between blocks is where simultaneous contrast is strongest — each block modifies the perceived colour of its neighbour</li>
+              <li><strong>Figure/ground:</strong> In Rosepath, the diamond "figure" should advance with warm colours and recede with cool ones</li>
+              <li><strong>Float length:</strong> Longer floats = larger colour areas = more true simultaneous contrast (less optical mixing)</li>
+            </ul>
+            <div class="insight" style="margin-top:1rem"><strong>Key insight:</strong> As you move from plain weave (1/1) to 3/1 twill to block weaves, the warp and weft colour areas grow larger. Larger areas → less optical mixing → more true simultaneous contrast. This is why 8-shaft block weaves produce the strongest colour contrast effects.</div>
+          </div>
+        </div>
+      </div>
+      <div class="tab-panel" id="tab-compare">
+        <div style="font-family:Arial,sans-serif;font-size:0.82rem;margin-bottom:0.8rem">Compare the four structures shown in the drawdown panel with your current colour pair:</div>
+        <div class="two-col">
+          <div>
+            <div class="obs-q">Which structure shows the most distinct colour contrast?</div>
+            <textarea placeholder="Name the structure and describe why its float length affects the result…"></textarea>
+            <div class="obs-q">Where is the optical mix colour most visible (hard to tell warp from weft)?</div>
+            <textarea placeholder="Which structure produces the most optical blending?"></textarea>
+          </div>
+          <div>
+            <div class="obs-q">How does the diagonal twill line change the visual direction of the colour?</div>
+            <textarea placeholder="Does it create a different spatial effect from the block structure?"></textarea>
+            <div class="obs-q">What would happen if you added a third colour as a warp stripe?</div>
+            <textarea placeholder="Predict what you'd see in twill vs. block weave with a striped warp…"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const PRESETS = ['#1A3A5C','#C4722A','#8B1A1A','#4A7B6F','#2D4A3E','#D4B896','#F5D06A','#7B3F00','#FFFFFF','#1C1C1C','#9B4DCA','#2ECC71'];
+
+// Each structure: a function(row, col, numShafts) -> true=warp, false=weft
+// Using 4-shaft repeat tiles
+const STRUCTS = {
+  twill22: {
+    label: '2/2 Twill',
+    note: 'Balanced: warp and weft equally visible. The diagonal creates a linear colour contrast zone.',
+    fn: (r,c) => (r+c)%4 < 2
+  },
+  twill31: {
+    label: '3/1 Twill (warp dominant)',
+    note: 'Warp dominates (~75%). The warp colour reads strongly; weft creates subtle texture and modifies perceived hue.',
+    fn: (r,c) => (r+c)%4 < 3
+  },
+  herringbone: {
+    label: 'Herringbone',
+    note: 'Reversed 2/2 twill creates a chevron. The central join is the strongest simultaneous contrast zone.',
+    fn: (r,c) => {
+      const col = c % 8;
+      const dir = col < 4 ? (r+c)%4 < 2 : (r+(7-col))%4 < 2;
+      return dir;
+    }
+  },
+  huck: {
+    label: 'Huck Lace',
+    note: 'Isolated warp float "spots" on a plain-weave ground. Each spot is a colour island — the ground surrounds and contrasts with it.',
+    fn: (r,c) => {
+      const tr = r%6, tc = c%6;
+      if (tr===1 || tr===4) return true; // float rows
+      return (r+c)%2===0; // plain weave ground
+    }
+  },
+  msOs: {
+    label: "M's and O's",
+    note: 'Alternating warp-up and weft-up blocks. Each block is large enough for true simultaneous contrast — the contrast at block boundaries is strongest.',
+    fn: (r,c) => {
+      const block = (Math.floor(r/4)+Math.floor(c/4))%2;
+      if (block===0) return (r+c)%2===0; // plain weave
+      return Math.floor(r/2)%2===0; // warp floats
+    }
+  },
+  rosepath: {
+    label: 'Rosepath',
+    note: 'Diamond figure on a twill ground. The figure/ground relationship creates simultaneous contrast between the two texture zones.',
+    fn: (r,c) => {
+      const tr=r%8, tc=c%8;
+      // simplified rosepath
+      if (tr===0) return tc%2===0;
+      if (tr===1) return tc%2===1;
+      if (tr===2) return tc===0||tc===3||tc===4||tc===7;
+      if (tr===3) return tc===1||tc===2||tc===5||tc===6;
+      if (tr===4) return tc===0||tc===3||tc===4||tc===7;
+      if (tr===5) return tc%2===1;
+      if (tr===6) return tc%2===0;
+      return tc%2===1;
+    }
+  },
+  custom: {
+    label: 'Custom Treadling',
+    note: 'Design your own treadling sequence using the grid on the left. Click cells to toggle shaft positions.',
+    fn: null
+  }
+};
+
+// Custom treadling state: 8 picks, 4 shafts
+let customTreadling = [
+  [true,false,true,false],
+  [false,true,false,true],
+  [true,false,true,false],
+  [false,true,false,true],
+  [true,true,false,false],
+  [false,false,true,true],
+  [true,true,false,false],
+  [false,false,true,true],
+];
+
+let currentStruct = 'twill22';
+
+function buildTreadlingGrid() {
+  const grid = document.getElementById('treadlingGrid');
+  grid.innerHTML = '';
+  customTreadling.forEach((row, ri) => {
+    const tr = document.createElement('div');
+    tr.className = 'treadle-row';
+    const lbl = document.createElement('div');
+    lbl.className = 'treadle-label';
+    lbl.textContent = `Pick ${ri+1}`;
+    tr.appendChild(lbl);
+    row.forEach((on, ci) => {
+      const cell = document.createElement('div');
+      cell.className = 'treadle-cell' + (on ? ' on' : '');
+      cell.title = `Shaft ${ci+1}`;
+      cell.addEventListener('click', () => {
+        customTreadling[ri][ci] = !customTreadling[ri][ci];
+        cell.classList.toggle('on');
+        if (currentStruct === 'custom') update();
+      });
+      tr.appendChild(cell);
+    });
+    // Shaft labels
+    if (ri === 0) {
+      [1,2,3,4].forEach((n,i) => {
+        const prev = grid.children[0];
+        if (prev) {
+          // add labels above first row
+        }
+      });
+    }
+    grid.appendChild(tr);
+  });
+  // Add shaft labels above
+  const header = document.createElement('div');
+  header.className = 'treadle-row';
+  const hSpacer = document.createElement('div');
+  hSpacer.style.width = '56px';
+  hSpacer.className = 'treadle-label';
+  hSpacer.textContent = 'Shaft →';
+  header.appendChild(hSpacer);
+  [1,2,3,4].forEach(n => {
+    const lbl = document.createElement('div');
+    lbl.style.cssText = 'width:22px;text-align:center;font-family:Arial,sans-serif;font-size:0.7rem;color:var(--muted);flex-shrink:0';
+    lbl.textContent = n;
+    header.appendChild(lbl);
+  });
+  grid.insertBefore(header, grid.firstChild);
+}
+
+function customFn(r, c) {
+  const pick = r % customTreadling.length;
+  const shaft = c % 4;
+  return customTreadling[pick][shaft];
+}
+
+function getPattern() {
+  if (currentStruct === 'custom') return customFn;
+  return STRUCTS[currentStruct].fn;
+}
+
+function hexToRgb(hex) {
+  return [parseInt(hex.slice(1,3),16), parseInt(hex.slice(3,5),16), parseInt(hex.slice(5,7),16)];
+}
+function rgbToHex(r,g,b) {
+  return '#'+[r,g,b].map(v=>Math.round(Math.max(0,Math.min(255,v))).toString(16).padStart(2,'0')).join('');
+}
+function mixColors(h1,h2,ratio=0.5) {
+  const [r1,g1,b1]=hexToRgb(h1),[r2,g2,b2]=hexToRgb(h2);
+  return rgbToHex(r1*ratio+r2*(1-ratio),g1*ratio+g2*(1-ratio),b1*ratio+b2*(1-ratio));
+}
+function colorDist(h1,h2) {
+  const [r1,g1,b1]=hexToRgb(h1),[r2,g2,b2]=hexToRgb(h2);
+  return Math.sqrt((r1-r2)**2+(g1-g2)**2+(b1-b2)**2);
+}
+
+function drawCanvas(canvas, fn, warp, weft, cell=8) {
+  const ctx = canvas.getContext('2d');
+  const cols = Math.floor(canvas.width/cell);
+  const rows = Math.floor(canvas.height/cell);
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  for (let r=0;r<rows;r++) {
+    for (let c=0;c<cols;c++) {
+      ctx.fillStyle = fn(r,c) ? warp : weft;
+      ctx.fillRect(c*cell, r*cell, cell-0.5, cell-0.5);
+    }
+  }
+}
+
+function drawMini(canvas, fn, warp, weft) {
+  drawCanvas(canvas, fn, warp, weft, 6);
+}
+
+function buildSwatches(id, colorId) {
+  const el = document.getElementById(id);
+  PRESETS.forEach(hex => {
+    const s = document.createElement('div');
+    s.className = 'swatch';
+    s.style.background = hex;
+    s.title = hex;
+    s.addEventListener('click', () => {
+      document.getElementById(colorId).value = hex;
+      update();
+    });
+    el.appendChild(s);
+  });
+}
+
+function updateAnalysis(warp, weft) {
+  const struct = STRUCTS[currentStruct];
+  // estimate warp ratio
+  let warpPixels = 0, total = 0;
+  const fn = getPattern();
+  for (let r=0;r<32;r++) for (let c=0;c<32;c++) { total++; if(fn(r,c)) warpPixels++; }
+  const warpRatio = warpPixels/total;
+  const mix = mixColors(warp, weft, warpRatio);
+  const dist = colorDist(warp,weft);
+  const pct = Math.round(dist/(Math.sqrt(3)*255)*100);
+
+  document.getElementById('warpSwatch').style.background = warp;
+  document.getElementById('weftSwatch').style.background = weft;
+  document.getElementById('mixSwatch').style.background = mix;
+  document.getElementById('contrastFill').style.width = pct+'%';
+  document.getElementById('mixLabel').innerHTML = `<span style="font-family:Arial,sans-serif;font-size:0.82rem">Optical mix: <strong>${mix}</strong><br><span style="color:var(--muted)">Warp dominates ${Math.round(warpRatio*100)}% of surface</span></span>`;
+
+  let insight = struct.note + ' ';
+  if (pct > 65) {
+    insight += `<br><br><strong>High contrast detected (${pct}%).</strong> With this colour pair, the structural features of the weave will be strongly visible. The ${currentStruct==='msOs'?'block boundaries':'diagonal twill line'} will act as an intense simultaneous contrast zone.`;
+  } else if (pct < 25) {
+    insight += `<br><br><strong>Low contrast detected (${pct}%).</strong> With similar colours, the structural features of this weave may become invisible — the cloth will read as a near-solid tone. Try increasing contrast to reveal the ${currentStruct==='msOs'?'block pattern':'diagonal texture'}.`;
+  } else {
+    insight += `<br><br>Contrast level: <strong>${pct}%</strong>. Try pushing to a complementary pair to maximise the simultaneous contrast effect in this structure.`;
+  }
+  document.getElementById('insight').innerHTML = insight;
+}
+
+function update() {
+  const warp = document.getElementById('warpColor').value;
+  const weft = document.getElementById('weftColor').value;
+  const fn = getPattern();
+  drawCanvas(document.getElementById('drawdown'), fn, warp, weft, 10);
+  updateAnalysis(warp, weft);
+
+  // Minis
+  drawMini(document.getElementById('mini1'), (r,c)=>(r+c)%2===0, warp, weft);
+  drawMini(document.getElementById('mini2'), (r,c)=>(r+c)%4<2, warp, weft);
+  drawMini(document.getElementById('mini3'), (r,c)=>(r+c)%4<3, warp, weft);
+  drawMini(document.getElementById('mini4'), STRUCTS.msOs.fn, warp, weft);
+}
+
+// Struct buttons
+document.querySelectorAll('.struct-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.struct-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    currentStruct = btn.dataset.struct;
+    document.getElementById('structLabel').textContent = '— ' + STRUCTS[currentStruct].label;
+    update();
+  });
+});
+
+// Tabs
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('tab-'+t.dataset.tab).classList.add('active');
+  });
+});
+
+// Experiments
+const EXPERIMENTS = [
+  { warp:'#1A3A5C', weft:'#C4722A', name:'Navy + Terracotta', type:'Complementary', struct:'twill22' },
+  { warp:'#1C1C1C', weft:'#F5D06A', name:'Black + Gold', type:'Value contrast', struct:'twill31' },
+  { warp:'#8B1A1A', weft:'#4A7B6F', name:'Crimson + Sage', type:'Complementary', struct:'msOs' },
+  { warp:'#4A7B6F', weft:'#2D4A3E', name:'Sage + Forest', type:'Analogous (test block visibility)', struct:'msOs' },
+  { warp:'#C4722A', weft:'#1A3A5C', name:'Terracotta + Navy', type:'Complementary (reversed)', struct:'herringbone' },
+  { warp:'#D4B896', weft:'#2D4A3E', name:'Sand + Forest', type:'High value contrast', struct:'rosepath' },
+];
+const expList = document.getElementById('expList');
+EXPERIMENTS.forEach(exp => {
+  const btn = document.createElement('button');
+  btn.className = 'exp-btn';
+  btn.innerHTML = `<span style="width:16px;height:16px;border-radius:2px;background:${exp.warp};border:1px solid rgba(0,0,0,0.2);flex-shrink:0"></span><span style="width:16px;height:16px;border-radius:2px;background:${exp.weft};border:1px solid rgba(0,0,0,0.2);flex-shrink:0"></span><span><strong>${exp.name}</strong> <span style="color:var(--muted)">${exp.type}</span><br><span style="color:var(--accent);font-size:0.75rem">Try in: ${STRUCTS[exp.struct].label}</span></span>`;
+  btn.addEventListener('click', () => {
+    document.getElementById('warpColor').value = exp.warp;
+    document.getElementById('weftColor').value = exp.weft;
+    // Switch struct
+    document.querySelectorAll('.struct-btn').forEach(b=>{
+      if(b.dataset.struct===exp.struct) { b.classList.add('active'); currentStruct=exp.struct; document.getElementById('structLabel').textContent='— '+STRUCTS[exp.struct].label; }
+      else b.classList.remove('active');
+    });
+    update();
+  });
+  expList.appendChild(btn);
+});
+
+buildSwatches('warpSwatches','warpColor');
+buildSwatches('weftSwatches','weftColor');
+buildTreadlingGrid();
+
+document.getElementById('warpColor').addEventListener('input', update);
+document.getElementById('weftColor').addEventListener('input', update);
+
+document.getElementById('structLabel').textContent = '— ' + STRUCTS[currentStruct].label;
+update();
+</script>
+</body>
+</html>
