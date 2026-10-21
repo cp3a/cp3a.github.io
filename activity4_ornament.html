@@ -1,0 +1,1011 @@
+---
+layout: none
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>8-Shaft Weaving Draft Simulator</title>
+<style>
+:root {
+  --ink:#1C1C1C; --paper:#F7F4F0; --card:#FFFFFF;
+  --accent:#7B3F00; --accent2:#B04C04; --muted:#888;
+  --border:#DDD; --grid:#BBBBBB; --header-bg:#4A2000;
+  color-scheme:light;
+}
+@media(prefers-color-scheme:dark){
+  :root{--ink:#EFEFEF;--paper:#1E1A18;--card:#272220;--accent:#D4895A;--accent2:#E07040;--muted:#999;--border:#3A3330;--grid:#555;--header-bg:#2A1000;}
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Georgia',serif;background:var(--paper);color:var(--ink);min-height:100vh;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}
+header{background:var(--header-bg);color:#fff;padding:1.2rem 2rem 1rem}
+header .eyebrow{font-family:Arial,sans-serif;font-size:.76rem;letter-spacing:.06em;color:#D4A87A;margin-bottom:.3rem}
+header h1{font-size:clamp(1.2rem,3vw,1.8rem);font-weight:normal}
+header p{font-family:Arial,sans-serif;font-size:.86rem;color:#C4A888;margin-top:.4rem;max-width:64ch}
+/* Top row: 3 panels; drawdown full-width below */
+.layout{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.2rem;max-width:1300px;margin:0 auto;padding:1.2rem}
+@media(max-width:860px){.layout{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){.layout{grid-template-columns:1fr}}
+.full{grid-column:1/-1}
+.panel{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:1.1rem}
+.panel h2{font-family:Arial,sans-serif;font-size:.9rem;font-weight:bold;color:var(--accent2);border-bottom:1px solid var(--border);padding-bottom:.4rem;margin-bottom:.8rem}
+.section-title{font-family:Arial,sans-serif;font-size:.68rem;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:.6rem 0 .3rem}
+
+/* ─── Draft grids ─────────────────────────── */
+.draft-wrap{display:inline-flex;flex-direction:column;gap:2px}
+.draft-row{display:flex;gap:2px;align-items:center}
+.cell{width:24px;height:24px;border:1px solid var(--grid);border-radius:2px;cursor:pointer;flex-shrink:0;transition:background .1s}
+.cell.on{background:var(--ink);border-color:var(--ink)}
+.cell.read-only{cursor:default}
+.row-lbl{font-family:Arial,sans-serif;font-size:.66rem;color:var(--muted);min-width:42px;text-align:right;padding-right:5px;flex-shrink:0}
+.col-lbl{font-family:Arial,sans-serif;font-size:.62rem;width:24px;text-align:center;flex-shrink:0;border-radius:2px;padding:1px 0}
+
+/* ─── Thread swatches — compact horizontal row with tooltips ── */
+.thread-list{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:.3rem}
+.thread-row{position:relative}
+.thread-num{display:none}
+.thread-swatch{width:22px;height:22px;border-radius:3px;border:2px solid var(--border);cursor:pointer;flex-shrink:0;position:relative;display:block}
+.thread-swatch:hover{border-color:var(--accent2);z-index:10}
+.thread-swatch::after{content:attr(data-tip);position:absolute;bottom:26px;left:50%;transform:translateX(-50%);background:#222;color:#fff;font-family:Arial,sans-serif;font-size:.64rem;padding:2px 5px;border-radius:3px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .15s;z-index:200}
+.thread-swatch:hover::after{opacity:1}
+.swatch-palette{position:absolute;top:26px;left:0;z-index:100;background:var(--card);border:1px solid var(--border);border-radius:4px;padding:6px;box-shadow:0 4px 16px rgba(0,0,0,.18);display:none;width:210px}
+.swatch-palette.open{display:block}
+.palette-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:3px;margin-bottom:6px}
+.pal-swatch{width:22px;height:22px;border-radius:2px;cursor:pointer;border:1px solid rgba(0,0,0,.12);transition:transform .1s}
+.pal-swatch:hover{transform:scale(1.2)}
+.palette-custom{display:flex;align-items:center;gap:6px;border-top:1px solid var(--border);padding-top:5px;margin-top:2px}
+.palette-custom label{font-family:Arial,sans-serif;font-size:.72rem;color:var(--muted)}
+.palette-custom input[type=color]{width:36px;height:26px;border:1px solid var(--border);border-radius:3px;cursor:pointer;padding:2px;background:none}
+.thread-name{display:none}
+
+/* ─── Scheme selectors ────────────────────── */
+.scheme-grid{display:grid;grid-template-columns:1fr 1fr;gap:.4rem;margin-bottom:.5rem}
+.scheme-btn{font-family:Arial,sans-serif;font-size:.74rem;padding:.28rem .5rem;border:1px solid var(--border);border-radius:3px;cursor:pointer;background:var(--paper);color:var(--ink);display:flex;align-items:center;gap:.3rem;transition:all .15s}
+.scheme-btn:hover{border-color:var(--accent2)}
+.scheme-btn.active{border-color:var(--accent2);background:color-mix(in srgb,var(--accent2) 10%,transparent)}
+.scheme-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;border:1px solid rgba(0,0,0,.15)}
+
+/* ─── Weft sequence — 2-column compact ─────── */
+.weft-grid{display:grid;grid-template-columns:1fr 1fr;gap:2px 8px}
+.weft-col{display:grid;grid-template-columns:auto auto auto;gap:2px 5px;align-items:center}
+.weft-header{font-family:Arial,sans-serif;font-size:.65rem;color:var(--muted);padding-bottom:3px}
+.treadle-sel{font-family:Arial,sans-serif;font-size:.7rem;border:1px solid var(--border);border-radius:3px;background:var(--paper);color:var(--ink);padding:1px 3px;cursor:pointer}
+.pick-lbl{font-family:Arial,sans-serif;font-size:.66rem;color:var(--muted);text-align:right;padding-right:2px}
+.color-preview{width:14px;height:14px;border-radius:2px;border:1px solid var(--border)}
+
+/* ─── Buttons ─────────────────────────────── */
+.btn-row{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.7rem}
+.icon-btn{font-family:Arial,sans-serif;font-size:.8rem;padding:.4rem .85rem;border:1px solid var(--border);border-radius:3px;cursor:pointer;background:var(--paper);color:var(--ink);display:flex;align-items:center;gap:.35rem;transition:all .15s}
+.icon-btn:hover{border-color:var(--accent2);color:var(--accent2)}
+.icon-btn.primary{background:var(--accent2);color:#fff;border-color:var(--accent2)}
+.icon-btn.primary:hover{opacity:.87}
+.icon-btn.danger{border-color:#C00;color:#C00}
+.icon-btn.danger:hover{background:#C00;color:#fff}
+
+/* ─── Canvas ──────────────────────────────── */
+canvas{display:block;image-rendering:pixelated;border:1px solid var(--border);border-radius:2px;max-width:100%}
+.canvas-note{font-family:Arial,sans-serif;font-size:.72rem;color:var(--muted);margin-top:.3rem}
+
+/* ─── Insight ─────────────────────────────── */
+.insight{background:color-mix(in srgb,var(--accent2) 10%,transparent);border-left:3px solid var(--accent2);padding:.6rem .9rem;font-family:Arial,sans-serif;font-size:.8rem;line-height:1.55;border-radius:0 3px 3px 0;margin:.6rem 0}
+
+/* ─── Observation journal ─────────────────── */
+.journal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.8rem}
+.journal-header h2{border-bottom:none;padding-bottom:0;margin-bottom:0}
+.tab-row{display:flex;border-bottom:2px solid var(--border);margin-bottom:.9rem}
+.tab{font-family:Arial,sans-serif;font-size:.8rem;padding:.45rem .9rem;cursor:pointer;border:none;background:none;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-2px}
+.tab.active{color:var(--accent2);border-bottom-color:var(--accent2);font-weight:bold}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:1.4rem}
+@media(max-width:600px){.two-col{grid-template-columns:1fr}}
+.obs-q{font-family:Arial,sans-serif;font-size:.8rem;font-weight:bold;margin-bottom:.28rem;color:var(--ink)}
+.obs-q .qn{display:inline-block;background:var(--accent2);color:#fff;border-radius:50%;width:1.35em;height:1.35em;text-align:center;line-height:1.35em;font-size:.7rem;margin-right:.32rem}
+textarea{width:100%;min-height:62px;border:1px solid var(--border);border-radius:3px;padding:.45rem;font-family:Arial,sans-serif;font-size:.8rem;resize:vertical;background:var(--paper);color:var(--ink);margin-bottom:.65rem}
+textarea:focus{outline:2px solid var(--accent2)}
+hr{border:none;border-top:1px solid var(--border);margin:.7rem 0}
+.exp-btn{display:block;width:100%;text-align:left;padding:.38rem .6rem;margin-bottom:.35rem;border:1px solid var(--border);border-radius:3px;background:var(--paper);color:var(--ink);cursor:pointer;font-family:Arial,sans-serif;font-size:.78rem}
+.exp-btn:hover{border-color:var(--accent2)}
+.color-slot{display:flex;flex-direction:column;align-items:center;gap:.2rem}
+.color-slot label{font-family:Arial,sans-serif;font-size:.7rem;color:var(--muted)}
+.pattern-btn{font-family:Arial,sans-serif;font-size:.74rem;padding:.28rem .55rem;border:1px solid var(--border);border-radius:3px;cursor:pointer;background:var(--paper);color:var(--ink);transition:all .12s}
+.pattern-btn:hover{border-color:var(--accent2)}
+.pattern-btn.active{background:var(--accent2);color:#fff;border-color:var(--accent2)}
+details>summary{list-style:none}
+details>summary::-webkit-details-marker{display:none}
+</style>
+</head>
+<body>
+<header>
+  <div class="eyebrow">Textile Design Activity — Colour in Weaving Structure</div>
+  <h1>8-Shaft Weaving Draft Simulator</h1>
+  <p>Explore how warp colour, weft colour, and tieup decisions interact in this 8-shaft threading. Edit the tieup, warp and weft colours, then save your draft and notes together.</p>
+</header>
+
+<div class="layout">
+
+<!-- ═══ PANEL 1 — Warp colours ═══════════════════════════════════════════ -->
+<div class="panel">
+  <h2>Warp Colour Scheme</h2>
+  <div class="section-title">Presets</div>
+  <div class="scheme-grid" id="warpSchemeGrid"></div>
+  <details style="margin:.5rem 0 .6rem">
+    <summary style="font-family:Arial,sans-serif;font-size:.76rem;color:var(--accent2);cursor:pointer;user-select:none">＋ Create custom scheme</summary>
+    <div style="padding:.5rem 0 .2rem">
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:flex-end;margin-bottom:.5rem">
+        <div class="color-slot"><label>Colour A</label><input type="color" id="customWarpA" value="#2D4A3E"></div>
+        <div class="color-slot"><label>Colour B</label><input type="color" id="customWarpB" value="#F5D06A"></div>
+        <div class="color-slot"><label>Colour C</label><input type="color" id="customWarpC" value="#C4722A"></div>
+      </div>
+      <div style="display:flex;gap:.35rem;flex-wrap:wrap;margin-bottom:.4rem" id="customWarpPatterns"></div>
+      <canvas id="customWarpPreview" width="240" height="18" style="margin-bottom:.4rem;display:block;border:1px solid var(--border);border-radius:2px;image-rendering:pixelated;width:100%"></canvas>
+      <div style="display:flex;gap:.4rem;align-items:center">
+        <input type="text" id="customWarpName" placeholder="Scheme name…" style="flex:1;font-family:Arial,sans-serif;font-size:.78rem;border:1px solid var(--border);border-radius:3px;padding:.28rem .45rem;background:var(--paper);color:var(--ink)">
+        <button class="icon-btn primary" id="saveCustomWarp" style="white-space:nowrap">＋ Add</button>
+      </div>
+    </div>
+  </details>
+  <div class="section-title">Individual threads — click a swatch to change</div>
+  <div class="thread-list" id="warpThreadList"></div>
+  <div class="insight" id="warpInsight" style="margin-top:.6rem"></div>
+</div>
+
+<!-- ═══ PANEL 2 — Threading + Tieup ══════════════════════════════════════ -->
+<div style="display:flex;flex-direction:column;gap:1.2rem">
+
+  <div class="panel">
+    <h2>Tieup <span style="font-weight:normal;font-size:.78rem;color:var(--muted)">— click cells to edit</span></h2>
+    <p style="font-family:Arial,sans-serif;font-size:.76rem;color:var(--muted);margin-bottom:.6rem">Columns = treadles; rows = shafts.</p>
+    <div class="btn-row">
+      <button class="icon-btn" id="resetTieup">↺ Straight draw</button>
+      <button class="icon-btn" id="twillTieup">⟋ 2/2 Twill</button>
+      <button class="icon-btn" id="satin5Tieup">◈ Satin 5</button>
+      <button class="icon-btn danger" id="resetAll">⟳ Reset everything</button>
+    </div>
+    <div id="tieupWrap"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Threading Draft</h2>
+    <p style="font-family:Arial,sans-serif;font-size:.76rem;color:var(--muted);margin-bottom:.5rem">Choose a standard 8-shaft threading below.</p>
+    <div class="btn-row" style="flex-wrap:wrap" id="threadingPresets"></div>
+    <div id="threadingWrap" style="overflow-x:auto;margin-top:.3rem"></div>
+  </div>
+
+</div>
+
+<!-- ═══ PANEL 3 — Weft colours ════════════════════════════════════════════ -->
+<div class="panel">
+  <h2>Weft Colour Scheme</h2>
+  <div class="section-title">Presets</div>
+  <div class="scheme-grid" id="weftSchemeGrid"></div>
+  <details style="margin:.5rem 0 .6rem">
+    <summary style="font-family:Arial,sans-serif;font-size:.76rem;color:var(--accent2);cursor:pointer;user-select:none">＋ Create custom scheme</summary>
+    <div style="padding:.5rem 0 .2rem">
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:flex-end;margin-bottom:.5rem">
+        <div class="color-slot"><label>Colour A</label><input type="color" id="customWeftA" value="#1A3A5C"></div>
+        <div class="color-slot"><label>Colour B</label><input type="color" id="customWeftB" value="#6633CC"></div>
+        <div class="color-slot"><label>Colour C</label><input type="color" id="customWeftC" value="#D4B896"></div>
+      </div>
+      <div style="display:flex;gap:.35rem;flex-wrap:wrap;margin-bottom:.4rem" id="customWeftPatterns"></div>
+      <canvas id="customWeftPreview" width="240" height="18" style="margin-bottom:.4rem;display:block;border:1px solid var(--border);border-radius:2px;image-rendering:pixelated;width:100%"></canvas>
+      <div style="display:flex;gap:.4rem;align-items:center">
+        <input type="text" id="customWeftName" placeholder="Scheme name…" style="flex:1;font-family:Arial,sans-serif;font-size:.78rem;border:1px solid var(--border);border-radius:3px;padding:.28rem .45rem;background:var(--paper);color:var(--ink)">
+        <button class="icon-btn primary" id="saveCustomWeft" style="white-space:nowrap">＋ Add</button>
+      </div>
+    </div>
+  </details>
+  <div class="section-title">Individual picks — click colour · choose treadle</div>
+  <div class="weft-grid" id="weftGrid"></div>
+</div>
+
+<!-- ═══ FULL WIDTH — Drawdown ══════════════════════════════════════════════ -->
+<div class="panel full">
+  <h2>Woven Cloth — Drawdown</h2>
+  <p style="font-family:Arial,sans-serif;font-size:.76rem;color:var(--muted);margin-bottom:.6rem">Dark = warp up (warp colour). Light = weft up (weft colour). Updates live as you change threading, tieup, or colours.</p>
+  <canvas id="drawdown" width="1100" height="420"></canvas>
+  <div class="canvas-note" id="drawdownNote"></div>
+</div>
+
+<!-- ═══ FULL WIDTH: JOURNAL ═══════════════════════════════════════════════ -->
+<div class="panel full">
+  <div class="journal-header">
+    <h2>Observation Journal</h2>
+    <button class="icon-btn primary" id="saveBtn">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M8 12l-5-5 1.4-1.4L7 9.2V1h2v8.2l2.6-3.6L13 7l-5 5zM2 14h12v-2H2v2z"/></svg>
+      Save notes + draft
+    </button>
+  </div>
+  <div class="tab-row">
+    <button class="tab active" data-tab="obs">Observations</button>
+    <button class="tab" data-tab="exp">Experiments</button>
+  </div>
+
+  <div class="tab-panel active" id="tab-obs">
+    <div class="two-col">
+      <div>
+        <div class="obs-q"><span class="qn">1</span> Start with the original scheme (black/cyan warp, mixed weft). Describe the pattern. Which colour appears dominant and why?</div>
+        <textarea placeholder="Consider: how much surface is warp vs. weft? Which is more visible?"></textarea>
+        <div class="obs-q"><span class="qn">2</span> Switch to the rust/amber warp preset. How does the change in warp colour affect the character of the ornament motif?</div>
+        <textarea placeholder="Describe how the same threading reads differently with warm vs. cool colours…"></textarea>
+        <div class="obs-q"><span class="qn">3</span> Change the weft scheme to a single solid colour. What changes compared to the original mixed weft sequence?</div>
+        <textarea placeholder="What disappears? What becomes more prominent?"></textarea>
+      </div>
+      <div>
+        <div class="obs-q"><span class="qn">4</span> Edit the tieup — change just one cell. Describe what new pattern emerges in the drawdown.</div>
+        <textarea placeholder="Try toggling one shaft on a treadle — what changes in the drawdown?"></textarea>
+        <div class="obs-q"><span class="qn">5</span> Try switching to the Point draw or Rosepath threading. How does a different threading change the pattern even with the same tieup and colours?</div>
+        <textarea placeholder="Compare the drawdown of two threadings with the same tieup — what is different and why?"></textarea>
+        <div class="obs-q"><span class="qn">6</span> Design your own colour combination. What relationship between warp colour, weft colour and tieup makes the strongest visual effect?</div>
+        <textarea placeholder="Describe your choices and the result…"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="tab-exp">
+    <div class="two-col">
+      <div>
+        <div class="obs-q" style="margin-bottom:.5rem">Suggested experiments:</div>
+        <div id="expList"></div>
+      </div>
+      <div>
+        <div class="obs-q" style="margin-bottom:.4rem">What to look for:</div>
+        <ul style="font-family:Arial,sans-serif;font-size:.8rem;line-height:1.8;padding-left:1.1rem;color:var(--ink)">
+          <li><strong>Warp/weft ratio:</strong> Where warp floats are longer the warp colour dominates locally, creating simultaneous contrast with weft-dominated areas</li>
+          <li><strong>Border threads:</strong> Threads 1, 12, 13, and 24 are on shaft 1 — they form the frame between repeats. Colouring them differently from the interior changes whether the pattern reads as outlined or filled</li>
+          <li><strong>Tieup symmetry:</strong> A straight-draw tieup produces a plain-weave texture; combining shafts on one treadle creates longer floats and richer patterns</li>
+          <li><strong>Weft accent row:</strong> The blue pick (row 6) in the original marks the centre of the repeat — this is where simultaneous contrast between warp and weft is strongest</li>
+          <li><strong>Value contrast:</strong> Try a weft much lighter or darker than the warp — the ornament motif becomes more or less legible</li>
+        </ul>
+        <div class="insight">The threading has an intentional symmetry: two 12-thread repeats, each with border threads (on shaft 1) framing a returning interior draw. Border threads are at positions 1, 12, 13 and 24. Editing the tieup affects border and interior threads differently, giving independent control over the pattern's outline vs. its field colour.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /.layout -->
+
+<script>
+// ─── Constants & initial data ────────────────────────────────────────────────
+const NUM_SHAFTS=8, NUM_THREADS=24, NUM_PICKS=20, NUM_TREADLES=8;
+
+// ─── Standard threading presets ───────────────────────────────────────────────
+// Each preset is an array of 24 shaft assignments (0-indexed), one per thread.
+// A matrix is built from this when selected.
+
+function shaftsFromSeq(seq){
+  // Build 8×24 matrix from per-thread shaft sequence (0-indexed shafts)
+  const T=Array.from({length:NUM_SHAFTS},()=>Array(NUM_THREADS).fill(0));
+  seq.forEach((s,t)=>{if(s>=0&&s<NUM_SHAFTS)T[s][t]=1});
+  return T;
+}
+
+// Repeat a short motif to fill 24 threads
+function rep(motif,n=24){const out=[];while(out.length<n)out.push(...motif);return out.slice(0,n)}
+
+const THREADING_PRESETS=[
+  {
+    name:'Returning motif',
+    desc:'Two repeats of a symmetric 12-thread motif with border threads (original)',
+    seq:[0,1,2,3,4,5,6,7,5,4,3,0, 0,1,2,3,4,5,6,7,5,4,3,0],
+  },
+  {
+    name:'Straight draw',
+    desc:'Sequential shafts 1–8 repeated — the basis for all twill structures',
+    seq:rep([0,1,2,3,4,5,6,7]),
+  },
+  {
+    name:'Point draw',
+    desc:'Shafts rise 1–8 then fall 7–2, repeat — produces diamond/chevron patterns',
+    seq:rep([0,1,2,3,4,5,6,7,6,5,4,3,2,1]),
+  },
+  {
+    name:'Rosepath',
+    desc:'Classic rosepath: 1,2,3,4,3,2,1,4 — produces diamond figures on twill ground',
+    seq:rep([0,1,2,3,2,1,0,3]),
+  },
+  {
+    name:'Turned twill',
+    desc:'Blocks of straight draw with direction changes — creates warp and weft dominant blocks',
+    seq:[0,1,2,3,4,5,6,7, 7,6,5,4,3,2,1,0, 0,1,2,3,4,5,6,7],
+  },
+  {
+    name:'Advancing twill',
+    desc:'Each repeat advances by 2 shafts — creates diagonal colour bands',
+    seq:rep([0,1,2,3,4,5,6,7,1,2,3,4]),
+  },
+  {
+    name:'Bronson lace',
+    desc:'Alternating plain weave and shaft-1 float pairs — creates lace spots',
+    seq:rep([0,1,0,2,0,3,0,4,0,5,0,6]),
+  },
+  {
+    name:'Huck lace',
+    desc:'Units of shaft 1 + straight draw pairs — produces elongated float spots on plain ground',
+    seq:rep([0,1,0,2,0,3,0,4]),
+  },
+];
+
+// Active threading as mutable matrix
+let currentThreading=shaftsFromSeq(THREADING_PRESETS[0].seq);
+let activeThreadingPreset=0;
+
+function shaftOf(t){for(let s=0;s<NUM_SHAFTS;s++)if(currentThreading[s][t])return s;return-1}
+
+const STRAIGHT_TIEUP=()=>Array.from({length:NUM_SHAFTS},(_,s)=>Array.from({length:NUM_TREADLES},(_,tr)=>s===tr?1:0));
+const TWILL_TIEUP=()=>Array.from({length:NUM_SHAFTS},(_,s)=>Array.from({length:NUM_TREADLES},(_,tr)=>((s+tr)%4<2)?1:0));
+const SATIN5_TIEUP=()=>Array.from({length:NUM_SHAFTS},(_,s)=>Array.from({length:NUM_TREADLES},(_,tr)=>((s*3+tr)%NUM_TREADLES<2)?1:0));
+
+// Default starting colours — forest/gold warp, terracotta weft (24 threads)
+const ORIG_WARP=['#2D4A3E','#F5D06A','#F5D06A','#F5D06A','#F5D06A','#F5D06A','#F5D06A','#F5D06A','#F5D06A','#F5D06A','#F5D06A','#2D4A3E','#2D4A3E','#F5D06A','#F5D06A','#F5D06A','#F5D06A','#F5D06A','#F5D06A','#F5D06A','#F5D06A','#F5D06A','#F5D06A','#2D4A3E'];
+const ORIG_WEFT=Array(20).fill('#C4722A');
+const ORIG_TREADLES=[0,1,2,3,4,5,6,7,0,1,2,3,4,5,6,7,0,1,2,3];
+
+// ─── Palette ─────────────────────────────────────────────────────────────────
+const PALETTE=[
+  '#000000','#1C1C1C','#3D3D3D','#777777','#BBBBBB','#FFFFFF','#F5F0E8','#D4B896',
+  '#7B3F00','#B04C04','#C4722A','#E09050','#F5D06A','#FFFF00','#FFEE44','#FFD700',
+  '#FF9900','#FF6600','#FF3300','#CC0000','#8B1A1A','#CC3399','#9828FF','#6633CC',
+  '#1A3A5C','#0033AA','#0066CC','#0099FF','#00CCFF','#00FFFF','#00BBAA','#4A7B6F',
+  '#2D4A3E','#1A5C2A','#228833','#66BB44','#AADD66','#CCFF88','#905700','#6B3A2A',
+];
+
+// ─── State ───────────────────────────────────────────────────────────────────
+let tieup=STRAIGHT_TIEUP();
+let warpColors=[...ORIG_WARP];
+let weftColors=[...ORIG_WEFT];
+let treadleSeq=[...ORIG_TREADLES];
+let openPalette=null; // currently open palette element
+
+// ─── Warp colour schemes (24 threads) ────────────────────────────────────────
+// Border threads are at positions 0,11,12,23 (shaft 1); interior = all others
+const BORDER=[0,11,12,23];
+const mk=(b,inn)=>Array.from({length:24},(_,i)=>BORDER.includes(i)?b:inn);
+const WARP_SCHEMES=[
+  {name:'Forest / gold',        colors:mk('#2D4A3E','#F5D06A')},
+  {name:'Rust / amber',         colors:mk('#B04C04','#905700')},
+  {name:'Navy / crimson',       colors:mk('#1A3A5C','#8B1A1A')},
+  {name:'Blues / purples',      colors:mk('#1A3A5C','#6633CC')},
+  {name:'All one colour',       colors:Array(24).fill('#4A7B6F')},
+  {name:'Alternating threads',  colors:Array.from({length:24},(_,i)=>i%2===0?'#2D4A3E':'#F5D06A')},
+];
+
+// ─── Weft colour schemes ─────────────────────────────────────────────────────
+const WEFT_SCHEMES=[
+  {name:'All terracotta',       colors:Array(20).fill('#C4722A')},
+  {name:'All orange',           colors:Array(20).fill('#FF9900')},
+  {name:'All sand',             colors:Array(20).fill('#D4B896')},
+  {name:'Blues / purples',      colors:['#1A3A5C','#1A3A5C','#6633CC','#6633CC','#0066CC','#0066CC','#9B59B6','#9B59B6','#1A3A5C','#1A3A5C',
+                                         '#6633CC','#6633CC','#0066CC','#0066CC','#9B59B6','#9B59B6','#1A3A5C','#1A3A5C','#6633CC','#6633CC']},
+  {name:'Alternating picks',    colors:Array.from({length:20},(_,i)=>i%2===0?'#2D4A3E':'#F5D06A')},
+  {name:'Rainbow sequence',     colors:['#FF0000','#FF6600','#FF9900','#FFFF00','#AADD66','#00BB44',
+                                         '#00CCFF','#0066CC','#6633CC','#CC3399',
+                                         '#FF0000','#FF6600','#FF9900','#FFFF00','#AADD66','#00BB44',
+                                         '#00CCFF','#0066CC','#6633CC','#CC3399']},
+];
+
+// ─── Active scheme tracking ───────────────────────────────────────────────────
+let activeWarpScheme=-1, activeWeftScheme=-1;
+
+// ─── Compute drawdown ─────────────────────────────────────────────────────────
+function computeDD(){
+  return Array.from({length:NUM_PICKS},(_,pick)=>{
+    const tr=treadleSeq[pick];
+    return Array.from({length:NUM_THREADS},(_,th)=>{
+      const sh=shaftOf(th);
+      return sh>=0&&tieup[sh][tr]===1;
+    });
+  });
+}
+
+// ─── Draw canvas ──────────────────────────────────────────────────────────────
+function drawCanvas(){
+  const canvas=document.getElementById('drawdown');
+  const ctx=canvas.getContext('2d');
+  const dd=computeDD();
+  const repeats=4;
+  const totalCols=NUM_THREADS*repeats;
+  const cell=Math.floor(canvas.width/totalCols);
+  const cellH=Math.floor((canvas.height-12)/NUM_PICKS);
+  const gridW=cell*totalCols;
+  const gridH=cellH*NUM_PICKS;
+
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  // Fill cells
+  for(let pick=0;pick<NUM_PICKS;pick++){
+    for(let rep=0;rep<repeats;rep++){
+      for(let th=0;th<NUM_THREADS;th++){
+        const col=rep*NUM_THREADS+th;
+        ctx.fillStyle=dd[pick][th]?warpColors[th]:weftColors[pick];
+        ctx.fillRect(col*cell, pick*cellH, cell, cellH);
+      }
+    }
+  }
+
+  // Draw grid lines on top — consistent 1px lines in a semi-transparent colour
+  ctx.strokeStyle='rgba(0,0,0,0.18)';
+  ctx.lineWidth=1;
+  // Vertical lines
+  for(let c=0;c<=totalCols;c++){
+    const x=c*cell+0.5;
+    ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,gridH);ctx.stroke();
+  }
+  // Horizontal lines
+  for(let r=0;r<=NUM_PICKS;r++){
+    const y=r*cellH+0.5;
+    ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(gridW,y);ctx.stroke();
+  }
+
+  // Heavier lines at repeat boundaries
+  ctx.strokeStyle='rgba(0,0,0,0.4)';
+  ctx.lineWidth=2;
+  for(let rep=1;rep<repeats;rep++){
+    const rx=rep*NUM_THREADS*cell+1;
+    ctx.beginPath();ctx.moveTo(rx,0);ctx.lineTo(rx,gridH);ctx.stroke();
+  }
+
+  // Warp colour header strip at bottom
+  for(let rep=0;rep<repeats;rep++){
+    for(let th=0;th<NUM_THREADS;th++){
+      const col=rep*NUM_THREADS+th;
+      ctx.fillStyle=warpColors[th];
+      ctx.fillRect(col*cell, gridH+2, cell-1, 8);
+    }
+  }
+
+  document.getElementById('drawdownNote').textContent=
+    `${NUM_THREADS} threads × ${repeats} repeats = ${totalCols} threads shown. Colour strip = warp colours.`;
+}
+
+// ─── Colour palette popup ─────────────────────────────────────────────────────
+function closePalette(){
+  if(openPalette){openPalette.classList.remove('open');openPalette=null}
+}
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.thread-swatch'))closePalette();
+});
+
+function makePalette(currentColor, onSelect){
+  const pop=document.createElement('div');
+  pop.className='swatch-palette';
+  const grid=document.createElement('div');
+  grid.className='palette-grid';
+  PALETTE.forEach(hex=>{
+    const s=document.createElement('div');
+    s.className='pal-swatch';
+    s.style.background=hex;
+    s.title=hex;
+    if(hex.toLowerCase()===currentColor.toLowerCase()){
+      s.style.outline='2px solid var(--accent2)';
+      s.style.outlineOffset='1px';
+    }
+    s.addEventListener('click',e=>{e.stopPropagation();onSelect(hex);closePalette()});
+    grid.appendChild(s);
+  });
+  pop.appendChild(grid);
+  // Custom colour
+  const custom=document.createElement('div');
+  custom.className='palette-custom';
+  const lbl=document.createElement('label');
+  lbl.textContent='Custom:';
+  const inp=document.createElement('input');
+  inp.type='color';
+  inp.value=currentColor;
+  inp.addEventListener('input',e=>{onSelect(e.target.value)});
+  inp.addEventListener('change',e=>{onSelect(e.target.value);closePalette()});
+  custom.appendChild(lbl);
+  custom.appendChild(inp);
+  pop.appendChild(custom);
+  return pop;
+}
+
+function makeThreadSwatch(hex, onSelect, label){
+  const swatch=document.createElement('div');
+  swatch.className='thread-swatch';
+  swatch.style.background=hex;
+  swatch.title=`Click to change colour (${hex})`;
+  const pop=makePalette(hex, color=>{
+    swatch.style.background=color;
+    swatch.title=`Click to change colour (${color})`;
+    onSelect(color);
+  });
+  swatch.appendChild(pop);
+  swatch.addEventListener('click',e=>{
+    e.stopPropagation();
+    if(openPalette&&openPalette!==pop){closePalette()}
+    pop.classList.toggle('open');
+    openPalette=pop.classList.contains('open')?pop:null;
+  });
+  return swatch;
+}
+
+// ─── Build warp thread list ─────────────────────────────────────────────────
+function buildWarpList(){
+  const list=document.getElementById('warpThreadList');
+  list.innerHTML='';
+  warpColors.forEach((c,i)=>{
+    const wrap=document.createElement('div');
+    wrap.className='thread-row';
+    const swatch=makeThreadSwatch(c, color=>{
+      warpColors[i]=color;
+      activeWarpScheme=-1;
+      refreshWarpSchemeButtons();
+      buildThreadingDisplay();
+      drawCanvas();
+      updateWarpInsight();
+    });
+    swatch.setAttribute('data-tip',`Thread ${i+1}`);
+    wrap.appendChild(swatch);
+    list.appendChild(wrap);
+  });
+}
+
+// ─── Build weft grid (compact 2-column) ───────────────────────────────────────
+function buildWeftGrid(){
+  const outer=document.getElementById('weftGrid');
+  outer.innerHTML='';
+  // Two sub-grids side by side
+  const half=Math.ceil(NUM_PICKS/2);
+  [0,half].forEach(offset=>{
+    const col=document.createElement('div');
+    col.className='weft-col';
+    // mini header
+    ['#','●','Tr'].forEach(h=>{
+      const d=document.createElement('div');
+      d.className='weft-header';
+      d.textContent=h;
+      col.appendChild(d);
+    });
+    for(let pick=offset;pick<Math.min(offset+half,NUM_PICKS);pick++){
+      const lbl=document.createElement('div');
+      lbl.className='pick-lbl';
+      lbl.textContent=pick+1;
+      col.appendChild(lbl);
+
+      const swatch=makeThreadSwatch(weftColors[pick], color=>{
+        weftColors[pick]=color;
+        activeWeftScheme=-1;
+        refreshWeftSchemeButtons();
+        drawCanvas();
+      });
+      swatch.style.width='18px';
+      swatch.style.height='18px';
+      swatch.setAttribute('data-tip',`Pick ${pick+1}`);
+      col.appendChild(swatch);
+
+      const sel=document.createElement('select');
+      sel.className='treadle-sel';
+      for(let tr=0;tr<NUM_TREADLES;tr++){
+        const opt=document.createElement('option');
+        opt.value=tr;
+        opt.textContent=`T${tr+1}`;
+        if(treadleSeq[pick]===tr)opt.selected=true;
+        sel.appendChild(opt);
+      }
+      sel.addEventListener('change',e=>{treadleSeq[pick]=parseInt(e.target.value);drawCanvas()});
+      col.appendChild(sel);
+    }
+    outer.appendChild(col);
+  });
+}
+
+// ─── Build threading preset buttons ───────────────────────────────────────────
+function buildThreadingPresets(){
+  const row=document.getElementById('threadingPresets');
+  row.innerHTML='';
+  THREADING_PRESETS.forEach((pr,i)=>{
+    const btn=document.createElement('button');
+    btn.className='icon-btn'+(activeThreadingPreset===i?' primary':'');
+    btn.title=pr.desc;
+    btn.textContent=pr.name;
+    btn.addEventListener('click',()=>{
+      currentThreading=shaftsFromSeq(pr.seq);
+      activeThreadingPreset=i;
+      buildThreadingPresets();
+      buildThreadingDisplay();
+      drawCanvas();
+    });
+    row.appendChild(btn);
+  });
+}
+
+// ─── Build threading display (read-only) ──────────────────────────────────────
+function buildThreadingDisplay(){
+  const wrap=document.getElementById('threadingWrap');
+  wrap.innerHTML='';
+  const draft=document.createElement('div');
+  draft.className='draft-wrap';
+  // Thread colour header
+  const hdr=document.createElement('div');
+  hdr.className='draft-row';
+  const sp=document.createElement('div');sp.className='row-lbl';hdr.appendChild(sp);
+  for(let t=0;t<NUM_THREADS;t++){
+    const lbl=document.createElement('div');
+    lbl.className='col-lbl';
+    lbl.textContent=t+1;
+    lbl.style.background=warpColors[t];
+    lbl.style.color=isLight(warpColors[t])?'#333':'#fff';
+    hdr.appendChild(lbl);
+  }
+  draft.appendChild(hdr);
+  for(let s=0;s<NUM_SHAFTS;s++){
+    const row=document.createElement('div');
+    row.className='draft-row';
+    const lbl=document.createElement('div');
+    lbl.className='row-lbl';
+    lbl.textContent=`Shaft ${s+1}`;
+    row.appendChild(lbl);
+    for(let t=0;t<NUM_THREADS;t++){
+      const cell=document.createElement('div');
+      cell.className='cell read-only'+(currentThreading[s][t]?' on':'');
+      if(currentThreading[s][t]) cell.style.background=warpColors[t];
+      row.appendChild(cell);
+    }
+    draft.appendChild(row);
+  }
+  wrap.appendChild(draft);
+}
+
+// ─── Build tieup (editable) ───────────────────────────────────────────────────
+function buildTieup(){
+  const wrap=document.getElementById('tieupWrap');
+  wrap.innerHTML='';
+  const draft=document.createElement('div');
+  draft.className='draft-wrap';
+  const hdr=document.createElement('div');
+  hdr.className='draft-row';
+  const sp=document.createElement('div');sp.className='row-lbl';hdr.appendChild(sp);
+  for(let tr=0;tr<NUM_TREADLES;tr++){
+    const lbl=document.createElement('div');
+    lbl.className='col-lbl';
+    lbl.textContent=`T${tr+1}`;
+    hdr.appendChild(lbl);
+  }
+  draft.appendChild(hdr);
+  for(let s=0;s<NUM_SHAFTS;s++){
+    const row=document.createElement('div');
+    row.className='draft-row';
+    const lbl=document.createElement('div');
+    lbl.className='row-lbl';
+    lbl.textContent=`Sh ${s+1}`;
+    row.appendChild(lbl);
+    for(let tr=0;tr<NUM_TREADLES;tr++){
+      const cell=document.createElement('div');
+      cell.className='cell'+(tieup[s][tr]?' on':'');
+      cell.addEventListener('click',()=>{
+        tieup[s][tr]=1-tieup[s][tr];
+        cell.classList.toggle('on');
+        drawCanvas();
+      });
+      row.appendChild(cell);
+    }
+    draft.appendChild(row);
+  }
+  wrap.appendChild(draft);
+}
+
+// ─── Scheme buttons ───────────────────────────────────────────────────────────
+function buildSchemeButtons(){
+  // Warp
+  const wg=document.getElementById('warpSchemeGrid');
+  wg.innerHTML='';
+  WARP_SCHEMES.forEach((sc,i)=>{
+    const btn=document.createElement('button');
+    btn.className='scheme-btn'+(activeWarpScheme===i?' active':'');
+    btn.id=`warpScheme${i}`;
+    const d1=document.createElement('div');d1.className='scheme-dot';d1.style.background=sc.colors[0];
+    const d2=document.createElement('div');d2.className='scheme-dot';d2.style.background=sc.colors[3];
+    const txt=document.createElement('span');txt.textContent=sc.name;
+    btn.append(d1,d2,txt);
+    btn.addEventListener('click',()=>{
+      warpColors=[...sc.colors];
+      activeWarpScheme=i;
+      refreshWarpSchemeButtons();
+      buildWarpList();
+      buildThreadingDisplay();
+      drawCanvas();
+      updateWarpInsight();
+    });
+    wg.appendChild(btn);
+  });
+
+  // Weft
+  const wftg=document.getElementById('weftSchemeGrid');
+  wftg.innerHTML='';
+  WEFT_SCHEMES.forEach((sc,i)=>{
+    const btn=document.createElement('button');
+    btn.className='scheme-btn'+(activeWeftScheme===i?' active':'');
+    btn.id=`weftScheme${i}`;
+    const d1=document.createElement('div');d1.className='scheme-dot';d1.style.background=sc.colors[0];
+    const d2=document.createElement('div');d2.className='scheme-dot';d2.style.background=sc.colors[Math.min(5,sc.colors.length-1)];
+    const txt=document.createElement('span');txt.textContent=sc.name;
+    btn.append(d1,d2,txt);
+    btn.addEventListener('click',()=>{
+      weftColors=[...sc.colors];
+      activeWeftScheme=i;
+      refreshWeftSchemeButtons();
+      buildWeftGrid();
+      drawCanvas();
+    });
+    wftg.appendChild(btn);
+  });
+}
+
+function refreshWarpSchemeButtons(){
+  WARP_SCHEMES.forEach((_,i)=>{
+    const btn=document.getElementById(`warpScheme${i}`);
+    if(btn) btn.className='scheme-btn'+(activeWarpScheme===i?' active':'');
+  });
+}
+function refreshWeftSchemeButtons(){
+  WEFT_SCHEMES.forEach((_,i)=>{
+    const btn=document.getElementById(`weftScheme${i}`);
+    if(btn) btn.className='scheme-btn'+(activeWeftScheme===i?' active':'');
+  });
+}
+
+// ─── Insight ──────────────────────────────────────────────────────────────────
+function updateWarpInsight(){
+  const border=warpColors[0], interior=warpColors[3];
+  const same=warpColors.every(c=>c===warpColors[0]);
+  const el=document.getElementById('warpInsight');
+  if(same) el.textContent='All warp threads the same colour — the ornament structure is only visible through the tieup and weft contrast, not the warp.';
+  else if(border===interior) el.textContent='Border threads (1, 12, 13, 24) and interior threads are the same colour — no warp-colour contrast between pattern edge and field.';
+  else el.textContent=`Border threads (1, 12, 13, 24 — shaft 1) vs. interior threads have different colours — this is the main source of warp-colour contrast in the pattern.`;
+}
+
+// ─── Tieup presets ────────────────────────────────────────────────────────────
+document.getElementById('resetTieup').addEventListener('click',()=>{tieup=STRAIGHT_TIEUP();buildTieup();drawCanvas()});
+document.getElementById('twillTieup').addEventListener('click',()=>{tieup=TWILL_TIEUP();buildTieup();drawCanvas()});
+document.getElementById('satin5Tieup').addEventListener('click',()=>{tieup=SATIN5_TIEUP();buildTieup();drawCanvas()});
+
+// ─── Reset everything ─────────────────────────────────────────────────────────
+document.getElementById('resetAll').addEventListener('click',()=>{
+  tieup=STRAIGHT_TIEUP();
+  warpColors=[...ORIG_WARP];
+  weftColors=[...ORIG_WEFT];
+  treadleSeq=[...ORIG_TREADLES];
+  currentThreading=shaftsFromSeq(THREADING_PRESETS[0].seq);
+  activeThreadingPreset=0;
+  activeWarpScheme=0;
+  activeWeftScheme=0;
+  buildSchemeButtons();
+  buildThreadingPresets();
+  buildWarpList();
+  buildThreadingDisplay();
+  buildTieup();
+  buildWeftGrid();
+  drawCanvas();
+  updateWarpInsight();
+  document.querySelectorAll('textarea').forEach(t=>t.value='');
+});
+
+// ─── Tabs ─────────────────────────────────────────────────────────────────────
+document.querySelectorAll('.tab').forEach(t=>{
+  t.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('tab-'+t.dataset.tab).classList.add('active');
+  });
+});
+
+// ─── Save notes + draft ───────────────────────────────────────────────────────
+document.getElementById('saveBtn').addEventListener('click',()=>{
+  const now=new Date().toLocaleString();
+  const areas=document.querySelectorAll('#tab-obs textarea');
+  const questions=[
+    'Q1. Original colours — describe pattern and which colour dominates.',
+    'Q2. Rust/amber warp preset — how does colour change affect the ornament motif?',
+    'Q3. Single weft colour — what changes compared to the mixed weft sequence?',
+    'Q4. Edited tieup — describe the new pattern that emerges.',
+    'Q5. Threading symmetry — how does the tieup interact with the ornament border threads?',
+    'Q6. Your own colour combination — describe your choices and the result.',
+  ];
+
+  // Format tieup as ASCII grid
+  let tieupStr='     T1 T2 T3 T4 T5 T6 T7 T8\n';
+  for(let s=0;s<NUM_SHAFTS;s++){
+    tieupStr+=`Sh${s+1}  `+tieup[s].map(v=>v?'■':'□').join('  ')+'\n';
+  }
+  // Format treadle sequence
+  const treadleStr=treadleSeq.map((t,i)=>`Pick ${i+1}: T${t+1}  Weft: ${weftColors[i]}`).join('\n');
+  // Format warp colours
+  const warpStr=warpColors.map((c,i)=>`Thread ${i+1}: ${c}`).join('\n');
+
+  const threadingName=activeThreadingPreset>=0?THREADING_PRESETS[activeThreadingPreset].name:'Custom';
+  let text=`8-SHAFT WEAVING DRAFT SIMULATOR\n`;
+  text+=`Colour in Weaving Structure Activity\n`;
+  text+=`Saved: ${now}\n`;
+  text+=`${'='.repeat(52)}\n\n`;
+  text+=`THREADING: ${threadingName}\n\n`;
+  text+=`TIEUP AT TIME OF SAVE\n${'─'.repeat(40)}\n`;
+  text+=tieupStr+'\n';
+  text+=`WARP COLOURS\n${'─'.repeat(40)}\n`;
+  text+=warpStr+'\n\n';
+  text+=`WEFT SEQUENCE (colour + treadle per pick)\n${'─'.repeat(40)}\n`;
+  text+=treadleStr+'\n\n';
+  text+=`OBSERVATION QUESTIONS\n${'─'.repeat(40)}\n\n`;
+  questions.forEach((q,i)=>{
+    const val=areas[i]?areas[i].value.trim():'';
+    text+=`${q}\n${val||'(no answer entered)'}\n\n`;
+  });
+
+  const blob=new Blob([text],{type:'text/plain'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`ornament-draft-notes-${Date.now()}.txt`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+// ─── Experiments ──────────────────────────────────────────────────────────────
+[
+  {name:'Make the pattern disappear',           desc:'Set all warp threads to the same colour as the weft — the weave structure becomes invisible.',
+   fn:()=>{warpColors=Array(24).fill('#C4722A');weftColors=Array(20).fill('#C4722A');rebuildAll()}},
+  {name:'Reverse the colour assignment',        desc:'Swap border and interior thread colours to invert the pattern.',
+   fn:()=>{warpColors=mk('#F5D06A','#2D4A3E');weftColors=Array(20).fill('#C4722A');rebuildAll()}},
+  {name:'Add a single accent pick',             desc:'Change just one weft pick to a contrasting colour and observe the effect on the pattern.',
+   fn:()=>{warpColors=[...ORIG_WARP];weftColors=Array(20).fill('#C4722A');weftColors[9]='#6633CC';rebuildAll()}},
+  {name:'Try the 2/2 twill tieup',              desc:'See how this threading responds to a twill lifting order.',
+   fn:()=>{tieup=TWILL_TIEUP();buildTieup();drawCanvas()}},
+  {name:'All shafts on every treadle',          desc:'Every treadle lifts every shaft — produces a fully warp-faced surface.',
+   fn:()=>{tieup=Array(8).fill(null).map(()=>Array(8).fill(1));buildTieup();drawCanvas()}},
+  {name:'Colour only the border threads',       desc:'Make border threads (positions 1, 12, 13, 24) a contrasting colour to the interior.',
+   fn:()=>{warpColors=mk('#6633CC','#2D4A3E');weftColors=Array(20).fill('#D4B896');rebuildAll()}},
+].forEach(exp=>{
+  const btn=document.createElement('button');
+  btn.className='exp-btn';
+  btn.innerHTML=`<strong>${exp.name}</strong><br><span style="color:var(--muted)">${exp.desc}</span>`;
+  btn.addEventListener('click',exp.fn);
+  document.getElementById('expList').appendChild(btn);
+});
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function isLight(hex){
+  const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  return(.299*r+.587*g+.114*b)>128;
+}
+function getColorName(hex){
+  const names={'#000000':'Black','#ffffff':'White','#00ffff':'Cyan','#ff9900':'Orange','#9828ff':'Purple',
+    '#ffff00':'Yellow','#b04c04':'Rust','#905700':'Amber','#2d4a3e':'Forest green','#f5d06a':'Gold',
+    '#1a3a5c':'Navy','#8b1a1a':'Crimson','#4a7b6f':'Sage','#d4b896':'Sand','#c4722a':'Terracotta',
+    '#6633cc':'Purple','#9b59b6':'Violet','#0066cc':'Cobalt blue','#0033aa':'Deep blue'};
+  return names[hex.toLowerCase()]||hex;
+}
+function rebuildAll(){
+  activeWarpScheme=-1; activeWeftScheme=-1;
+  refreshWarpSchemeButtons(); refreshWeftSchemeButtons();
+  buildWarpList(); buildThreadingDisplay(); buildWeftGrid(); drawCanvas(); updateWarpInsight();
+}
+function rebuildThreading(){
+  buildThreadingPresets(); buildThreadingDisplay(); drawCanvas();
+}
+
+// ─── Custom scheme builder ────────────────────────────────────────────────────
+const WARP_PATTERNS=[
+  {name:'All A',           fn:(i,a,b,c)=>a},
+  {name:'A|B border',      fn:(i,a,b,c)=>BORDER.includes(i)?a:b},
+  {name:'Alternate A/B',   fn:(i,a,b,c)=>i%2===0?a:b},
+  {name:'A/B/C stripe 3',  fn:(i,a,b,c)=>[a,b,c][i%3]},
+  {name:'A/B stripe 4',    fn:(i,a,b,c)=>Math.floor(i/4)%2===0?a:b},
+  {name:'A/B/C stripe 4',  fn:(i,a,b,c)=>{const s=Math.floor(i/4)%3;return[a,b,c][s]}},
+  {name:'A centre / B edge',fn:(i,a,b,c)=>(i>5&&i<18)?a:b},
+  {name:'Gradient A→B',    fn:(i,a,b,c)=>i<8?a:i<16?b:c},
+];
+const WEFT_PATTERNS=[
+  {name:'All A',           fn:(i,a,b,c)=>a},
+  {name:'Alternate A/B',   fn:(i,a,b,c)=>i%2===0?a:b},
+  {name:'A/B/C stripe 2',  fn:(i,a,b,c)=>[a,b,c][Math.floor(i/2)%3]},
+  {name:'A/B stripe 4',    fn:(i,a,b,c)=>Math.floor(i/4)%2===0?a:b},
+  {name:'A/B/C stripe 4',  fn:(i,a,b,c)=>{const s=Math.floor(i/4)%3;return[a,b,c][s]}},
+  {name:'A top, B bottom', fn:(i,a,b,c)=>i<10?a:b},
+  {name:'A/B/A sandwich',  fn:(i,a,b,c)=>(i<5||i>14)?a:b},
+  {name:'Gradient A→B→C',  fn:(i,a,b,c)=>i<7?a:i<14?b:c},
+];
+
+let activeWarpPattern=1; // 'A|B border' default
+let activeWeftPattern=1; // 'Alternate A/B' default
+
+function previewColors(canvas, count, patterns, activeIdx, colorIds){
+  const ctx=canvas.getContext('2d');
+  const a=document.getElementById(colorIds[0]).value;
+  const b=document.getElementById(colorIds[1]).value;
+  const c=document.getElementById(colorIds[2]).value;
+  const fn=patterns[activeIdx].fn;
+  const w=Math.floor(canvas.width/count);
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  for(let i=0;i<count;i++){
+    ctx.fillStyle=fn(i,a,b,c);
+    ctx.fillRect(i*w,0,w-1,canvas.height);
+  }
+}
+
+function buildCustomPatternBtns(containerId, patterns, getActive, setActive, previewFn){
+  const row=document.getElementById(containerId);
+  row.innerHTML='';
+  patterns.forEach((p,i)=>{
+    const btn=document.createElement('button');
+    btn.className='pattern-btn'+(getActive()===i?' active':'');
+    btn.textContent=p.name;
+    btn.addEventListener('click',()=>{
+      setActive(i);
+      row.querySelectorAll('.pattern-btn').forEach((b,j)=>b.className='pattern-btn'+(j===i?' active':''));
+      previewFn();
+    });
+    row.appendChild(btn);
+  });
+}
+
+function applyCustomWarpScheme(){
+  const a=document.getElementById('customWarpA').value;
+  const b=document.getElementById('customWarpB').value;
+  const c=document.getElementById('customWarpC').value;
+  const fn=WARP_PATTERNS[activeWarpPattern].fn;
+  return Array.from({length:NUM_THREADS},(_,i)=>fn(i,a,b,c));
+}
+function applyCustomWeftScheme(){
+  const a=document.getElementById('customWeftA').value;
+  const b=document.getElementById('customWeftB').value;
+  const c=document.getElementById('customWeftC').value;
+  const fn=WEFT_PATTERNS[activeWeftPattern].fn;
+  return Array.from({length:NUM_PICKS},(_,i)=>fn(i,a,b,c));
+}
+
+function updateWarpPreview(){previewColors(document.getElementById('customWarpPreview'),NUM_THREADS,WARP_PATTERNS,activeWarpPattern,['customWarpA','customWarpB','customWarpC'])}
+function updateWeftPreview(){previewColors(document.getElementById('customWeftPreview'),NUM_PICKS,WEFT_PATTERNS,activeWeftPattern,['customWeftA','customWeftB','customWeftC'])}
+
+function setupCustomBuilders(){
+  // Warp
+  buildCustomPatternBtns('customWarpPatterns',WARP_PATTERNS,()=>activeWarpPattern,v=>{activeWarpPattern=v},updateWarpPreview);
+  ['customWarpA','customWarpB','customWarpC'].forEach(id=>document.getElementById(id).addEventListener('input',updateWarpPreview));
+  updateWarpPreview();
+  document.getElementById('saveCustomWarp').addEventListener('click',()=>{
+    const name=document.getElementById('customWarpName').value.trim()||'Custom warp';
+    const colors=applyCustomWarpScheme();
+    WARP_SCHEMES.push({name, colors});
+    activeWarpScheme=WARP_SCHEMES.length-1;
+    warpColors=[...colors];
+    buildSchemeButtons();
+    refreshWarpSchemeButtons();
+    buildWarpList();
+    buildThreadingDisplay();
+    drawCanvas();
+    updateWarpInsight();
+    document.getElementById('customWarpName').value='';
+  });
+
+  // Weft
+  buildCustomPatternBtns('customWeftPatterns',WEFT_PATTERNS,()=>activeWeftPattern,v=>{activeWeftPattern=v},updateWeftPreview);
+  ['customWeftA','customWeftB','customWeftC'].forEach(id=>document.getElementById(id).addEventListener('input',updateWeftPreview));
+  updateWeftPreview();
+  document.getElementById('saveCustomWeft').addEventListener('click',()=>{
+    const name=document.getElementById('customWeftName').value.trim()||'Custom weft';
+    const colors=applyCustomWeftScheme();
+    WEFT_SCHEMES.push({name, colors});
+    activeWeftScheme=WEFT_SCHEMES.length-1;
+    weftColors=[...colors];
+    buildSchemeButtons();
+    refreshWeftSchemeButtons();
+    buildWeftGrid();
+    drawCanvas();
+    document.getElementById('customWeftName').value='';
+  });
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+activeWarpScheme=0; activeWeftScheme=0;
+buildSchemeButtons();
+buildThreadingPresets();
+buildWarpList();
+buildThreadingDisplay();
+buildTieup();
+buildWeftGrid();
+drawCanvas();
+updateWarpInsight();
+setupCustomBuilders();
+</script>
+</body>
+</html>
