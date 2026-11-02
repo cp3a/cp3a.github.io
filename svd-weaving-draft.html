@@ -1,0 +1,1043 @@
+---
+layout: none
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SVD Weaving Draft Explorer</title>
+<style>
+  :root {
+    --bg: #f8f7f4;
+    --surface: #ffffff;
+    --border: #e2e0da;
+    --border-strong: #c8c5bc;
+    --text: #1a1917;
+    --text-secondary: #6b6860;
+    --accent: #2a5f8f;
+    --accent-light: #e8f0f8;
+    --accent-border: #b8d0e8;
+    --warp: #2a5f8f;
+    --weft: #8f2a2a;
+    --tie: #2a7a3b;
+    --cell: 14px;
+    --radius: 6px;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1917;
+      --surface: #242320;
+      --border: #3a3835;
+      --border-strong: #52504c;
+      --text: #f0ede8;
+      --text-secondary: #9a9790;
+      --accent: #6aacdf;
+      --accent-light: #1e2f40;
+      --accent-border: #2a5f8f;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Georgia', serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 2rem 1.5rem 4rem;
+    max-width: 960px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+  h1 { font-size: 1.6rem; font-weight: 400; letter-spacing: -0.02em; margin-bottom: 0.25rem; }
+  h2 { font-size: 1.1rem; font-weight: 400; color: var(--text-secondary); margin: 2rem 0 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+  h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.5rem; }
+  p.lede { font-size: 0.95rem; color: var(--text-secondary); margin-bottom: 1.5rem; max-width: 60ch; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .upload-zone {
+    border: 1.5px dashed var(--border-strong);
+    border-radius: 10px;
+    padding: 2.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+  }
+  .upload-zone:hover, .upload-zone.drag { background: var(--accent-light); border-color: var(--accent); color: var(--text); }
+  .upload-zone input { display: none; }
+
+  .dim-row {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+  }
+  .dim-badge {
+    background: var(--accent-light);
+    border: 1px solid var(--accent-border);
+    border-radius: var(--radius);
+    padding: 0.4rem 0.85rem;
+    font-size: 0.9rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .dim-badge span { color: var(--text-secondary); font-size: 0.82rem; margin-right: 0.25rem; }
+
+  label { font-size: 0.88rem; color: var(--text-secondary); }
+  input[type=number], input[type=range] { 
+    font-family: inherit;
+    font-size: 0.9rem;
+    padding: 0.35rem 0.6rem;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text);
+    width: 80px;
+  }
+  input[type=number]:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-light); }
+
+  button {
+    font-family: inherit;
+    font-size: 0.9rem;
+    padding: 0.55rem 1.25rem;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-weight: 500;
+    transition: opacity 0.15s;
+    letter-spacing: 0.01em;
+  }
+  button:hover { opacity: 0.85; }
+  button:disabled { opacity: 0.4; cursor: default; }
+  button.secondary {
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border-strong);
+  }
+
+  .matrix-container {
+    overflow: auto;
+    max-height: 320px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+  }
+  .matrix-grid {
+    display: grid;
+    gap: 1px;
+    background: var(--border);
+    width: fit-content;
+  }
+  .matrix-cell {
+    width: var(--cell);
+    height: var(--cell);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 7px;
+    font-family: monospace;
+    background: var(--surface);
+  }
+  .matrix-cell.on { background: var(--text); color: var(--bg); }
+
+  .draft-area {
+    display: grid;
+    grid-template-columns: auto auto;
+    grid-template-rows: auto auto;
+    gap: 4px;
+    width: fit-content;
+  }
+  .draft-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    text-align: center;
+    padding: 0 0 4px;
+    font-style: italic;
+  }
+
+  .threading-grid, .tieup-grid, .treadling-grid, .drawdown-grid {
+    display: grid;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border-strong);
+    width: fit-content;
+  }
+  .threading-cell { width: var(--cell); height: var(--cell); background: var(--surface); }
+  .threading-cell.on { background: var(--warp); }
+  .tieup-cell { width: var(--cell); height: var(--cell); background: var(--surface); }
+  .tieup-cell.on { background: var(--tie); }
+  .treadling-cell { width: var(--cell); height: var(--cell); background: var(--surface); }
+  .treadling-cell.on { background: var(--weft); }
+  .drawdown-cell { width: var(--cell); height: var(--cell); background: var(--surface); }
+  .drawdown-cell.on { background: #1a1a1a; }
+
+  .draft-layout {
+    display: grid;
+    grid-template-areas:
+      "legend tieup"
+      "threading drawdown";
+    gap: 6px;
+    width: fit-content;
+  }
+  .draft-legend { grid-area: legend; display: flex; flex-direction: column; justify-content: flex-end; }
+  .draft-tieup { grid-area: tieup; }
+  .draft-threading { grid-area: threading; }
+  .draft-drawdown { grid-area: drawdown; }
+  .draft-treadling { }
+
+  .section-note {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-top: 0.5rem;
+    font-style: italic;
+  }
+
+  .status { font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.75rem; }
+  .error { color: #c0392b; }
+
+  .controls-row {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+  }
+  .controls-row label { display: flex; align-items: center; gap: 0.4rem; }
+
+  .hidden { display: none; }
+
+  .legend-row { display: flex; gap: 1rem; flex-wrap: wrap; margin: 0.75rem 0 0; font-size: 0.8rem; }
+  .legend-row span { display: flex; align-items: center; gap: 6px; }
+  .legend-swatch { width: 14px; height: 14px; border-radius: 2px; border: 1px solid var(--border); flex-shrink: 0; }
+
+  .scroll-wrap { overflow: auto; }
+
+  #treadling-wrap {
+    display: flex;
+    flex-direction: row;
+    gap: 6px;
+    align-items: flex-start;
+  }
+</style>
+</head>
+<body>
+
+<h1>SVD weaving draft explorer</h1>
+<p class="lede">Upload a greyscale or black-and-white BMP, scale it to your desired dimensions, set a shaft count Z, and decompose it into threading, tie-up, and treadling via singular value decomposition.</p>
+
+<!-- STEP 1: Upload -->
+<h2>1. Upload image</h2>
+<div class="card">
+  <div class="upload-zone" id="dropzone">
+    <div style="font-size:2rem;margin-bottom:0.5rem">⬆</div>
+    <div><strong>Drop a BMP file here</strong>, or click to browse</div>
+    <div style="margin-top:0.4rem;font-size:0.8rem">Greyscale or black &amp; white BMP</div>
+    <input type="file" id="fileInput" accept=".bmp,image/bmp">
+  </div>
+  <div class="status" id="uploadStatus"></div>
+</div>
+
+<!-- STEP 2: Image dimensions + scale -->
+<div id="scaleSection" class="hidden">
+  <h2>2. Image dimensions &amp; scale</h2>
+  <div class="card">
+    <div class="dim-row" id="dimDisplay"></div>
+    <div class="controls-row">
+      <label>
+        Scale:
+        <input type="number" id="scaleInput" value="100" min="1" max="100" step="1">
+        <span style="font-size:0.9rem">%</span>
+      </label>
+      <button class="secondary" onclick="applyScale()">Apply</button>
+    </div>
+    <div id="currentDims" style="font-size:0.85rem;color:var(--text-secondary);"></div>
+  </div>
+
+  <h2>3. Matrix view</h2>
+  <div class="card">
+    <p class="section-note" style="margin-bottom:0.75rem">Each pixel shown as 1 (dark) or 0 (light). Scrollable for large images.</p>
+    <div class="matrix-container" id="matrixContainer"></div>
+  </div>
+</div>
+
+<!-- STEP 3: SVD decomposition -->
+<div id="svdSection" class="hidden">
+  <h2>4. Set shaft count Z &amp; compute draft</h2>
+  <div class="card">
+    <div class="controls-row">
+      <label>Shafts / treadles (Z):
+        <input type="number" id="zInput" value="4" min="1" max="64" step="1">
+      </label>
+      <button id="computeBtn" onclick="computeDraft()">Create draft through matrix factorization</button>
+      <label style="margin-left:0.5rem;font-size:0.85rem;display:flex;align-items:center;gap:0.4rem">
+        <input type="checkbox" id="useHungarian"> Use optimal assignment (Hungarian algorithm — slower but more accurate)
+      </label>
+    </div>
+    <div class="status" id="svdStatus"></div>
+  </div>
+</div>
+
+<!-- STEP 4: Draft display -->
+<div id="draftSection" class="hidden">
+  <h2>5. Weaving draft</h2>
+  <div class="card">
+    <div class="legend-row">
+      <span><span class="legend-swatch" style="background:var(--warp)"></span> Threading (Z shafts × X warps)</span>
+      <span><span class="legend-swatch" style="background:var(--tie)"></span> Tie-up (Z × Z)</span>
+      <span><span class="legend-swatch" style="background:var(--weft)"></span> Treadling (Y picks × Z treadles)</span>
+      <span><span class="legend-swatch" style="background:#1a1a1a"></span> Drawdown (Y × X)</span>
+    </div>
+
+    <div style="margin-top:1.25rem" class="scroll-wrap">
+      <p class="section-note" style="margin-bottom:0.75rem">Standard draft layout: threading (shafts × warps) top-left, tie-up top-right, treadling (picks × treadles) below tie-up, drawdown bottom-left.</p>
+
+      <!-- Threading + Tie-up row -->
+      <div style="display:flex;gap:6px;align-items:flex-end;margin-bottom:4px;">
+        <div>
+          <div class="draft-label">Threading — rows=shafts, cols=warps</div>
+          <div class="scroll-wrap"><div id="threadingGrid" class="threading-grid"></div></div>
+        </div>
+        <div>
+          <div class="draft-label">Tie-up (Z×Z)</div>
+          <div id="tieupGrid" class="tieup-grid"></div>
+        </div>
+      </div>
+
+      <!-- Drawdown + Treadling row -->
+      <div style="display:flex;gap:6px;align-items:flex-start;">
+        <div>
+          <div class="draft-label">Drawdown — rows=picks, cols=warps</div>
+          <div class="scroll-wrap"><div id="drawdownGrid" class="drawdown-grid"></div></div>
+        </div>
+        <div>
+          <div class="draft-label">Treadling — rows=picks, cols=treadles</div>
+          <div class="scroll-wrap"><div id="treadlingGrid" class="treadling-grid"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:1.25rem">
+      <button id="wifBtn" onclick="exportWIF()" disabled>Download WIF file</button>
+    </div>
+    <div class="status" id="draftStatus"></div>
+  </div>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+let originalMatrix = null;   // full-res 0/1 matrix [rows][cols]
+let currentMatrix = null;    // scaled version
+let origWidth = 0, origHeight = 0;
+
+// ── BMP Parser ─────────────────────────────────────────────────────────────
+function parseBMP(buffer) {
+  const view = new DataView(buffer);
+  if (view.getUint8(0) !== 0x42 || view.getUint8(1) !== 0x4D) throw new Error("Not a BMP file.");
+  const pixelOffset = view.getUint32(14, true);
+  const width  = view.getInt32(18, true);
+  const height = view.getInt32(22, true);
+  const bpp    = view.getUint16(28, true);
+  const compression = view.getUint32(30, true);
+  const absHeight = Math.abs(height);
+  const topDown = height < 0;
+
+  // colour table for ≤8 bpp
+  let palette = null;
+  if (bpp <= 8) {
+    const colourCount = view.getUint32(46, true) || (1 << bpp);
+    palette = [];
+    const tableStart = 14 + view.getUint32(14, true);
+    for (let i = 0; i < colourCount; i++) {
+      const b = view.getUint8(tableStart + i * 4);
+      const g = view.getUint8(tableStart + i * 4 + 1);
+      const r = view.getUint8(tableStart + i * 4 + 2);
+      palette.push((r + g + b) / 3);
+    }
+  }
+
+  const rowSize = Math.floor((bpp * width + 31) / 32) * 4;
+  const matrix = [];
+
+  for (let row = 0; row < absHeight; row++) {
+    const srcRow = topDown ? row : (absHeight - 1 - row);
+    const rowOff = pixelOffset + srcRow * rowSize;
+    const matRow = [];
+
+    for (let col = 0; col < width; col++) {
+      let grey;
+      if (bpp === 1) {
+        const byteIdx = rowOff + Math.floor(col / 8);
+        const bit = 7 - (col % 8);
+        const idx = (view.getUint8(byteIdx) >> bit) & 1;
+        grey = palette ? palette[idx] : idx * 255;
+      } else if (bpp === 4) {
+        const byteIdx = rowOff + Math.floor(col / 2);
+        const nibble = (col % 2 === 0) ? (view.getUint8(byteIdx) >> 4) : (view.getUint8(byteIdx) & 0x0F);
+        grey = palette ? palette[nibble] : nibble * 17;
+      } else if (bpp === 8) {
+        const idx = view.getUint8(rowOff + col);
+        grey = palette ? palette[idx] : idx;
+      } else if (bpp === 24) {
+        const b = view.getUint8(rowOff + col * 3);
+        const g = view.getUint8(rowOff + col * 3 + 1);
+        const r = view.getUint8(rowOff + col * 3 + 2);
+        grey = 0.299 * r + 0.587 * g + 0.114 * b;
+      } else if (bpp === 32) {
+        const b = view.getUint8(rowOff + col * 4);
+        const g = view.getUint8(rowOff + col * 4 + 1);
+        const r = view.getUint8(rowOff + col * 4 + 2);
+        grey = 0.299 * r + 0.587 * g + 0.114 * b;
+      } else {
+        grey = 128;
+      }
+      matRow.push(grey < 128 ? 1 : 0);
+    }
+    matrix.push(matRow);
+  }
+  return { matrix, width, height: absHeight };
+}
+
+// ── Nearest-neighbour scale ────────────────────────────────────────────────
+function scaleMatrix(mat, pct) {
+  const srcH = mat.length, srcW = mat[0].length;
+  const newH = Math.max(1, Math.round(srcH * pct / 100));
+  const newW = Math.max(1, Math.round(srcW * pct / 100));
+  const out = [];
+  for (let r = 0; r < newH; r++) {
+    const sr = Math.floor(r * srcH / newH);
+    const row = [];
+    for (let c = 0; c < newW; c++) {
+      const sc = Math.floor(c * srcW / newW);
+      row.push(mat[sr][sc]);
+    }
+    out.push(row);
+  }
+  return out;
+}
+
+// ── Render matrix as tiny grid ─────────────────────────────────────────────
+function renderMatrix(container, mat, cellVar) {
+  const rows = mat.length, cols = mat[0].length;
+  container.innerHTML = '';
+  const grid = document.createElement('div');
+  grid.className = 'matrix-grid';
+  grid.style.gridTemplateColumns = `repeat(${cols}, var(--cell))`;
+  mat.forEach(row => {
+    row.forEach(v => {
+      const cell = document.createElement('div');
+      cell.className = 'matrix-cell' + (v ? ' on' : '');
+      grid.appendChild(cell);
+    });
+  });
+  container.appendChild(grid);
+}
+
+// ── Generic grid renderer ──────────────────────────────────────────────────
+function renderGrid(el, mat, onClass) {
+  el.innerHTML = '';
+  if (!mat || !mat.length) return;
+  const rows = mat.length, cols = mat[0].length;
+  el.style.gridTemplateColumns = `repeat(${cols}, var(--cell))`;
+  el.style.gridTemplateRows    = `repeat(${rows}, var(--cell))`;
+  mat.forEach(row => {
+    row.forEach(v => {
+      const cell = document.createElement('div');
+      cell.className = onClass + (v ? ' on' : '');
+      el.appendChild(cell);
+    });
+  });
+}
+
+// ── Upload handling ────────────────────────────────────────────────────────
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('fileInput');
+
+dropzone.addEventListener('click', () => fileInput.click());
+dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag'); });
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag'));
+dropzone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropzone.classList.remove('drag');
+  if (e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', () => { if (fileInput.files[0]) processFile(fileInput.files[0]); });
+
+function processFile(file) {
+  const status = document.getElementById('uploadStatus');
+  status.textContent = 'Reading…';
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const result = parseBMP(e.target.result);
+      originalMatrix = result.matrix;
+      origWidth = result.width;
+      origHeight = result.height;
+      currentMatrix = originalMatrix.map(r => [...r]);
+
+      status.textContent = `Loaded "${file.name}" — ${origWidth} × ${origHeight} px`;
+      document.getElementById('scaleSection').classList.remove('hidden');
+      document.getElementById('svdSection').classList.remove('hidden');
+      updateDimDisplay(origWidth, origHeight, 100);
+      renderMatrix(document.getElementById('matrixContainer'), currentMatrix);
+    } catch(err) {
+      status.textContent = '';
+      status.innerHTML = `<span class="error">Could not parse BMP: ${err.message}</span>`;
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function updateDimDisplay(w, h, pct) {
+  const el = document.getElementById('dimDisplay');
+  el.innerHTML = `
+    <div class="dim-badge"><span>X (width)</span>${w} px</div>
+    <div class="dim-badge"><span>Y (height)</span>${h} px</div>
+    <div class="dim-badge"><span>Scale</span>${pct}%</div>
+  `;
+  document.getElementById('currentDims').textContent =
+    `Original: ${origWidth} × ${origHeight}  →  Current: ${w} × ${h}`;
+}
+
+function applyScale() {
+  const pct = parseFloat(document.getElementById('scaleInput').value);
+  if (isNaN(pct) || pct < 1 || pct > 100) {
+    alert('Enter a percentage between 1 and 100.');
+    return;
+  }
+  currentMatrix = scaleMatrix(originalMatrix, pct);
+  const h = currentMatrix.length, w = currentMatrix[0].length;
+  updateDimDisplay(w, h, pct);
+  renderMatrix(document.getElementById('matrixContainer'), currentMatrix);
+  document.getElementById('draftSection').classList.add('hidden');
+}
+
+// ── Linear algebra helpers ─────────────────────────────────────────────────
+
+// Transpose a plain 2D array (array of arrays), returns array of Float64Arrays
+function transpose(A) {
+  const m = A.length, n = A[0].length;
+  const T = Array.from({length: n}, () => new Float64Array(m));
+  for (let i = 0; i < m; i++)
+    for (let j = 0; j < n; j++)
+      T[j][i] = A[i][j];
+  return T;
+}
+
+// Symmetric Jacobi eigendecomposition of an n×n symmetric matrix B.
+// Returns { vals: Float64Array(n), vecs: n×n plain array (columns = eigenvectors) }
+function jacobiEigen(B, n) {
+  // Working copy as plain arrays
+  const A = B.map(r => Array.from(r));
+  // Accumulate rotations in V (columns = eigenvectors), start as identity
+  const V = Array.from({length: n}, (_, i) =>
+    Array.from({length: n}, (_, j) => (i === j ? 1.0 : 0.0)));
+
+  for (let sweep = 0; sweep < 50 * n * n; sweep++) {
+    // Find largest off-diagonal element
+    let maxVal = 0, p = 0, q = 1;
+    for (let i = 0; i < n; i++)
+      for (let j = i + 1; j < n; j++) {
+        const v = Math.abs(A[i][j]);
+        if (v > maxVal) { maxVal = v; p = i; q = j; }
+      }
+    if (maxVal < 1e-13) break;
+
+    // Jacobi rotation angle
+    const theta = (A[q][q] - A[p][p]) / (2.0 * A[p][q]);
+    const t = theta >= 0
+      ?  1.0 / (theta + Math.sqrt(1.0 + theta * theta))
+      :  1.0 / (theta - Math.sqrt(1.0 + theta * theta));
+    const c = 1.0 / Math.sqrt(1.0 + t * t);
+    const s = t * c;
+
+    // Update diagonal and zero the pivot element
+    A[p][p] -= t * A[p][q];
+    A[q][q] += t * A[p][q];
+    A[p][q] = 0.0;
+    A[q][p] = 0.0;
+
+    // Update remaining rows/cols
+    for (let r = 0; r < n; r++) {
+      if (r === p || r === q) continue;
+      const Apr = A[p][r], Aqr = A[q][r];
+      A[p][r] = c * Apr - s * Aqr;  A[r][p] = A[p][r];
+      A[q][r] = s * Apr + c * Aqr;  A[r][q] = A[q][r];
+    }
+
+    // Accumulate rotation into V
+    for (let r = 0; r < n; r++) {
+      const Vrp = V[r][p], Vrq = V[r][q];
+      V[r][p] = c * Vrp - s * Vrq;
+      V[r][q] = s * Vrp + c * Vrq;
+    }
+  }
+
+  const vals = new Float64Array(n);
+  for (let i = 0; i < n; i++) vals[i] = A[i][i];
+  return { vals, vecs: V };
+}
+
+// Thin SVD of matrix M (shape: Y rows × X cols).
+// Returns { U: Y×k, S: Float64Array(k), Vt: k×X } where k = min(Y, X)
+// M = U * diag(S) * Vt  (up to numerical precision)
+//
+// Strategy: always diagonalise A^T A (X×X), whose eigenvectors ARE the
+// right singular vectors V (cols of V, rows of Vt). Then derive U = AV/sigma.
+// For wide images (X >> Y) this is more work than diagonalising AA^T, but it
+// is unambiguous — V always spans X-space (warp space), U spans Y-space
+// (pick space), which is exactly what the weaving draft needs.
+function thinSVD(M) {
+  const Y = M.length;
+  const X = M[0].length;
+  const k = Math.min(Y, X);
+
+  const A = M.map(r => Float64Array.from(r));
+
+  // Build A^T A  (X×X)
+  const ATA = Array.from({length: X}, () => new Float64Array(X));
+  for (let i = 0; i < X; i++)
+    for (let j = 0; j < X; j++) {
+      let s = 0;
+      for (let r = 0; r < Y; r++) s += A[r][i] * A[r][j];
+      ATA[i][j] = s;
+    }
+
+  // Eigendecompose A^T A — eigenvectors are right singular vectors (cols of V)
+  const { vals, vecs } = jacobiEigen(ATA, X);
+
+  // Sort by descending eigenvalue, keep top k
+  const order = Array.from({length: X}, (_, i) => i)
+    .sort((a, b) => vals[b] - vals[a])
+    .slice(0, k);
+
+  const S = new Float64Array(k);
+  for (let i = 0; i < k; i++) S[i] = Math.sqrt(Math.max(0, vals[order[i]]));
+
+  // Vt[j][x] = vecs[x][order[j]]   — j-th right singular vector as a row
+  const Vt = Array.from({length: k}, (_, j) =>
+    Float64Array.from({length: X}, (_, x) => vecs[x][order[j]])
+  );
+
+  // U = A V / sigma  →  U[y][j] = (sum_x A[y][x] * Vt[j][x]) / S[j]
+  const U = Array.from({length: Y}, (_, y) =>
+    Array.from({length: k}, (_, j) => {
+      let s = 0;
+      for (let x = 0; x < X; x++) s += A[y][x] * Vt[j][x];
+      return S[j] > 1e-12 ? s / S[j] : 0;
+    })
+  );
+
+  return { U, S, Vt, k };
+  // U:  Y×k  — left singular vectors;  U[pick][component]
+  // S:  k    — singular values, descending
+  // Vt: k×X  — right singular vectors; Vt[component][warp]
+}
+
+// Binarise a 2D array by its global median of absolute values
+function binariseByMedian(mat) {
+  const flat = mat.flatMap(r => Array.from(r).map(Math.abs)).sort((a, b) => a - b);
+  const med = flat[Math.floor(flat.length / 2)] || 0.5;
+  return mat.map(r => Array.from(r).map(v => (Math.abs(v) > med ? 1 : 0)));
+}
+
+// ── Hungarian algorithm (Munkres) for minimum cost assignment ──────────────
+// Solves the n×m assignment problem (n workers, m jobs, n <= m).
+// cost[i][j] = cost of assigning worker i to job j.
+// Returns assignment: Int32Array of length n where assignment[i] = job index.
+function hungarian(cost) {
+  const n = cost.length;
+  const m = cost[0].length;
+  // Pad to square if needed
+  const N = Math.max(n, m);
+  // u[i], v[j] = potentials; p[j] = worker assigned to job j (0 = none)
+  const u = new Float64Array(N + 1);
+  const v = new Float64Array(N + 1);
+  const p = new Int32Array(N + 1);  // p[j] = worker (1-based) assigned to job j
+  const way = new Int32Array(N + 1);
+
+  // Extend cost to N×N with zeros
+  function c(i, j) {
+    // i, j are 1-based
+    if (i <= n && j <= m) return cost[i - 1][j - 1];
+    return 0;
+  }
+
+  for (let i = 1; i <= N; i++) {
+    p[0] = i;
+    let j0 = 0;
+    const minVal = new Float64Array(N + 1).fill(Infinity);
+    const used = new Uint8Array(N + 1);
+    do {
+      used[j0] = 1;
+      let i0 = p[j0], delta = Infinity, j1 = -1;
+      for (let j = 1; j <= N; j++) {
+        if (!used[j]) {
+          const cur = c(i0, j) - u[i0] - v[j];
+          if (cur < minVal[j]) { minVal[j] = cur; way[j] = j0; }
+          if (minVal[j] < delta) { delta = minVal[j]; j1 = j; }
+        }
+      }
+      for (let j = 0; j <= N; j++) {
+        if (used[j]) { u[p[j]] += delta; v[j] -= delta; }
+        else { minVal[j] -= delta; }
+      }
+      j0 = j1;
+    } while (p[j0] !== 0);
+    do {
+      p[j0] = p[way[j0]];
+      j0 = way[j0];
+    } while (j0);
+  }
+
+  // Extract assignment for original n workers
+  const assignment = new Int32Array(n);
+  for (let j = 1; j <= N; j++) {
+    if (p[j] >= 1 && p[j] <= n && j <= m) {
+      assignment[p[j] - 1] = j - 1;  // 0-based
+    }
+  }
+  return assignment;
+}
+
+// ── Compute draft ──────────────────────────────────────────────────────────
+function computeDraft() {
+  const Z = parseInt(document.getElementById('zInput').value);
+  if (isNaN(Z) || Z < 1) { alert('Enter a valid Z ≥ 1.'); return; }
+  if (!currentMatrix) { alert('No image loaded.'); return; }
+
+  const useHungarian = document.getElementById('useHungarian').checked;
+  const status = document.getElementById('svdStatus');
+  status.textContent = useHungarian ? 'Computing SVD + optimal assignment…' : 'Computing SVD…';
+  document.getElementById('computeBtn').disabled = true;
+
+  setTimeout(() => {
+    try {
+      // currentMatrix is stored as [row][col] = [y][x], shape Y×X
+      const Y = currentMatrix.length;     // number of picks (rows)
+      const X = currentMatrix[0].length;  // number of warps (cols)
+
+      // SVD:  M (Y×X)  =  U (Y×r) · diag(S) (r×r) · Vt (r×X)
+      // where r = min(Y,X) — the true rank limit of the matrix.
+      // We then keep only the top Z components (or r if r < Z),
+      // and pad all three draft matrices out to exactly Z shafts/treadles.
+      const { U, S, Vt, k: r } = thinSVD(currentMatrix);
+      // U: Y×r, S: length r (descending), Vt: r×X
+
+      // How many singular components we actually have to work with
+      const kUse = Math.min(r, Z);  // components extracted from SVD
+      // If Z > r we pad with zeros to reach Z; if Z <= r we slice to Z.
+
+      // Convention used throughout:
+      //   threading[shaft][warp]   shape Z×X  — row = shaft, col = warp
+      //   tieup[shaft][treadle]    shape Z×Z  — row = shaft, col = treadle
+      //   treadling[pick][treadle] shape Y×Z  — row = pick,  col = treadle
+      //   drawdown[pick][warp]     shape Y×X  — row = pick,  col = warp
+
+      // ── Threading: Z×X ───────────────────────────────────────────────────
+      // Each warp thread must go on exactly one shaft.
+      // Argmax: assign each warp to the shaft with largest |Vt| value.
+      // Hungarian: find the globally optimal 1-to-1 warp→shaft assignment
+      //   minimising total |Vt| loss. Only possible when X <= kUse (enough
+      //   singular components to assign each warp to a distinct shaft).
+      const threadingBin = Array.from({length: Z}, () => new Array(X).fill(0));
+      const shaftOf = new Int32Array(X);
+
+      if (useHungarian && X <= kUse) {
+        // Cost matrix: X workers (warps) × kUse jobs (shafts)
+        // cost[x][i] = -|Vt[i][x]|  (negate to turn max into min)
+        const costT = Array.from({length: X}, (_, x) =>
+          Array.from({length: kUse}, (_, i) => -Math.abs(Vt[i][x]))
+        );
+        const assign = hungarian(costT);  // assign[x] = shaft index
+        for (let x = 0; x < X; x++) {
+          shaftOf[x] = assign[x];
+          threadingBin[assign[x]][x] = 1;
+        }
+      } else {
+        // Argmax fallback
+        for (let x = 0; x < X; x++) {
+          let bestShaft = 0, bestVal = -1;
+          for (let i = 0; i < kUse; i++) {
+            const v = Math.abs(Vt[i][x]);
+            if (v > bestVal) { bestVal = v; bestShaft = i; }
+          }
+          threadingBin[bestShaft][x] = 1;
+          shaftOf[x] = bestShaft;
+        }
+      }                                                                     // Z×X ✓
+
+      // ── Treadling: Y×Z ───────────────────────────────────────────────────
+      // Each pick is assigned to exactly one treadle.
+      // Same choice: argmax or Hungarian over U rows.
+      const treadlingBin = Array.from({length: Y}, () => new Array(Z).fill(0));
+      const treadleOf = new Int32Array(Y);
+
+      if (useHungarian && Y <= kUse) {
+        // Cost matrix: Y workers (picks) × kUse jobs (treadles)
+        const costU = Array.from({length: Y}, (_, y) =>
+          Array.from({length: kUse}, (_, j) => -Math.abs(U[y][j]))
+        );
+        const assign = hungarian(costU);  // assign[y] = treadle index
+        for (let y = 0; y < Y; y++) {
+          treadleOf[y] = assign[y];
+          treadlingBin[y][assign[y]] = 1;
+        }
+      } else {
+        // Argmax fallback
+        for (let y = 0; y < Y; y++) {
+          let bestTreadle = 0, bestVal = -1;
+          for (let j = 0; j < kUse; j++) {
+            const v = Math.abs(U[y][j]);
+            if (v > bestVal) { bestVal = v; bestTreadle = j; }
+          }
+          treadlingBin[y][bestTreadle] = 1;
+          treadleOf[y] = bestTreadle;
+        }
+      }                                                                     // Y×Z ✓
+
+      // ── Tie-up: Z×Z ──────────────────────────────────────────────────────
+      // With threading and treadling each assigning exactly one shaft/treadle
+      // per warp/pick, the drawdown is determined entirely by the tie-up:
+      //   drawdown[y][x] = tieup[ shaftOf[x] ][ treadleOf[y] ]
+      //
+      // So for each (shaft i, treadle j) pair, we look at all the pixels
+      // (y,x) where shaftOf[x]=i and treadleOf[y]=j, and set tieup[i][j]
+      // by majority vote — 1 if more than half of those pixels are dark.
+      // This is the closest binary tie-up to the original image given the
+      // threading and treadling assignments.
+      const tieup = Array.from({length: Z}, () => new Array(Z).fill(0));
+      for (let i = 0; i < Z; i++) {
+        const warpsOnShaft = [];
+        for (let x = 0; x < X; x++) if (shaftOf[x] === i) warpsOnShaft.push(x);
+        if (warpsOnShaft.length === 0) continue;
+        for (let j = 0; j < Z; j++) {
+          const picksOnTreadle = [];
+          for (let y = 0; y < Y; y++) if (treadleOf[y] === j) picksOnTreadle.push(y);
+          if (picksOnTreadle.length === 0) continue;
+          // Majority vote over the block of pixels (shaft i, treadle j)
+          let dark = 0, total = 0;
+          for (const y of picksOnTreadle)
+            for (const x of warpsOnShaft) {
+              dark += currentMatrix[y][x];
+              total++;
+            }
+          tieup[i][j] = (dark / total >= 0.5) ? 1 : 0;
+        }
+      }                                                                     // Z×Z ✓
+
+      // ── Drawdown: Y×X ────────────────────────────────────────────────────
+      // drawdown[y][x] = 1 if any shaft i is tied to a pressed treadle j:
+      //   treadling[y][j]=1 AND tieup[i][j]=1 AND threading[i][x]=1
+      const drawdown = Array.from({length: Y}, (_, y) =>
+        Array.from({length: X}, (_, x) => {
+          for (let i = 0; i < Z; i++) {
+            if (!threadingBin[i][x]) continue;
+            for (let j = 0; j < Z; j++) {
+              if (tieup[i][j] && treadlingBin[y][j]) return 1;
+            }
+          }
+          return 0;
+        })
+      );                                                                    // Y×X ✓
+
+      // ── Store for WIF export ──────────────────────────────────────────────
+      window._lastDraft = { threadingBin, tieup, treadlingBin, drawdown, k: Z, X, Y };
+
+      // ── Render ────────────────────────────────────────────────────────────
+      // threadingBin is Z×X: display as-is (rows=shafts, cols=warps)
+      renderGrid(document.getElementById('threadingGrid'), threadingBin, 'threading-cell');
+      // tieup is Z×Z
+      renderGrid(document.getElementById('tieupGrid'), tieup, 'tieup-cell');
+      // treadlingBin is Y×Z: display as-is (rows=picks, cols=treadles)
+      renderGrid(document.getElementById('treadlingGrid'), treadlingBin, 'treadling-cell');
+      // drawdown is Y×X
+      renderGrid(document.getElementById('drawdownGrid'), drawdown, 'drawdown-cell');
+
+      const padNote = kUse < Z
+        ? ` (image rank = ${kUse}; shafts ${kUse+1}–${Z} are zero-padded)` : '';
+      const assignNote = useHungarian
+        ? (X <= kUse && Y <= kUse
+            ? ' Optimal assignment used.'
+            : ` Optimal assignment requested but rank too low (rank=${kUse} < Z=${Z}); argmax used instead.`)
+        : ' Argmax assignment used.';
+      status.textContent =
+        `SVD complete. Z = ${Z}${padNote}.${assignNote} ` +
+        `Threading: ${Z}×${X},  tie-up: ${Z}×${Z},  ` +
+        `treadling: ${Y}×${Z},  drawdown: ${Y}×${X}.`;
+
+      document.getElementById('draftSection').classList.remove('hidden');
+      document.getElementById('wifBtn').disabled = false;
+      document.getElementById('draftSection').scrollIntoView({behavior:'smooth', block:'start'});
+    } catch (err) {
+      status.innerHTML = `<span class="error">Error: ${err.message}</span>`;
+      console.error(err);
+    }
+    document.getElementById('computeBtn').disabled = false;
+  }, 30);
+}
+
+// ── WIF Export ────────────────────────────────────────────────────────────
+async function exportWIF() {
+  const d = window._lastDraft;
+  if (!d) return;
+  const { threadingBin, tieup, treadlingBin, k, X, Y } = d;
+
+  const lines = [];
+
+  // [WIF]
+  lines.push('[WIF]');
+  lines.push('Version=1.1');
+  lines.push('Date=' + new Date().toISOString().slice(0,10));
+  lines.push('Developers=claude.ai SVD Weaving Draft Explorer');
+  lines.push('Source Program=SVD Draft Explorer');
+  lines.push('Source Version=1.0');
+  lines.push('');
+
+  // [CONTENTS]
+  lines.push('[CONTENTS]');
+  lines.push('Color Palette=yes');
+  lines.push('Warp=yes');
+  lines.push('Weft=yes');
+  lines.push('Threading=yes');
+  lines.push('Tieup=yes');
+  lines.push('Treadling=yes');
+  lines.push('Color Table=yes');
+  lines.push('Warp Colors=yes');
+  lines.push('Weft Colors=yes');
+  lines.push('');
+
+  // [WEAVING] — must declare Shafts and Treadles explicitly
+  lines.push('[WEAVING]');
+  lines.push('Shafts=' + k);
+  lines.push('Treadles=' + k);
+  lines.push('Rising Shed=yes');
+  lines.push('');
+
+  // [COLOR PALETTE]
+  lines.push('[COLOR PALETTE]');
+  lines.push('Entries=2');
+  lines.push('Form=RGB');
+  lines.push('Range=0,255');
+  lines.push('');
+
+  // [COLOR TABLE]
+  lines.push('[COLOR TABLE]');
+  lines.push('1=255,255,255');   // 1 = white (warp/background)
+  lines.push('2=0,0,0');         // 2 = black (weft/raised)
+  lines.push('');
+
+  // [WARP]
+  lines.push('[WARP]');
+  lines.push('Threads=' + X);
+  lines.push('Units=Decipoints');
+  lines.push('Sett=100');
+  lines.push('Color=1');
+  lines.push('');
+
+  // [WEFT]
+  lines.push('[WEFT]');
+  lines.push('Threads=' + Y);
+  lines.push('Units=Decipoints');
+  lines.push('Sett=100');
+  lines.push('Color=2');
+  lines.push('');
+
+  // [THREADING]
+  // WIF: warp thread number (1-based) = shaft number (1-based)
+  // threadingBin is Z×X (shaft × warp); for each warp column, find all active shafts.
+  // Standard WIF allows multiple shafts per thread; we emit all that are set.
+  lines.push('[THREADING]');
+  for (let x = 0; x < X; x++) {
+    const shafts = [];
+    for (let i = 0; i < k; i++) {
+      if (threadingBin[i][x]) shafts.push(i + 1);
+    }
+    // Every warp must appear; if none active assign shaft 1 as fallback
+    lines.push((x + 1) + '=' + (shafts.length > 0 ? shafts.join(',') : '1'));
+  }
+  lines.push('');
+
+  // [TIEUP]
+  // WIF: shaft number (1-based) = treadle list (1-based)
+  // tieup is Z×Z (shaft × treadle)
+  lines.push('[TIEUP]');
+  for (let i = 0; i < k; i++) {
+    const treadles = [];
+    for (let j = 0; j < k; j++) {
+      if (tieup[i][j]) treadles.push(j + 1);
+    }
+    if (treadles.length > 0) lines.push((i + 1) + '=' + treadles.join(','));
+  }
+  lines.push('');
+
+  // [TREADLING]
+  // WIF: pick number (1-based) = treadle list (1-based)
+  // treadlingBin is Y×Z (pick × treadle); for each pick row, find all active treadles.
+  lines.push('[TREADLING]');
+  for (let y = 0; y < Y; y++) {
+    const treadles = [];
+    for (let j = 0; j < k; j++) {
+      if (treadlingBin[y][j]) treadles.push(j + 1);
+    }
+    // Every pick must appear; if none active assign treadle 1 as fallback
+    lines.push((y + 1) + '=' + (treadles.length > 0 ? treadles.join(',') : '1'));
+  }
+  lines.push('');
+
+  // [WARP COLORS]
+  lines.push('[WARP COLORS]');
+  for (let x = 0; x < X; x++) lines.push((x+1) + '=1');
+  lines.push('');
+
+  // [WEFT COLORS]
+  lines.push('[WEFT COLORS]');
+  for (let y = 0; y < Y; y++) lines.push((y+1) + '=2');
+  lines.push('');
+
+  const text = lines.join('\r\n');
+  const btn = document.getElementById('wifBtn');
+  btn.disabled = true;
+  btn.textContent = 'Preparing download…';
+  try {
+    const downloads = await claude.use('downloads');
+    if (!downloads) {
+      // Fallback: show text in a copyable box
+      showWIFText(text);
+      return;
+    }
+    await downloads.save({ filename: 'svd_draft.wif', data: text });
+  } catch(e) {
+    showWIFText(text);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Download WIF file';
+  }
+}
+
+function showWIFText(text) {
+  let box = document.getElementById('wifTextBox');
+  if (!box) {
+    box = document.createElement('div');
+    box.id = 'wifTextBox';
+    box.style.cssText = 'margin-top:1rem';
+    document.getElementById('draftSection').querySelector('.card').appendChild(box);
+  }
+  box.innerHTML = `
+    <p class="section-note" style="margin-bottom:0.5rem">Copy the WIF below and save as <code>draft.wif</code>:</p>
+    <textarea readonly rows="12" style="width:100%;font-family:monospace;font-size:11px;padding:0.5rem;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--text);resize:vertical">${text.replace(/</g,'&lt;')}</textarea>
+    <button class="secondary" style="margin-top:0.5rem" onclick="navigator.clipboard.writeText(document.querySelector('#wifTextBox textarea').value).then(()=>this.textContent='Copied!').catch(()=>this.textContent='Select and copy manually')">Copy to clipboard</button>
+  `;
+}
+</script>
+</body>
+</html>
