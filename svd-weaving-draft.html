@@ -1,0 +1,1700 @@
+---
+layout: none
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SVD Weaving Draft Explorer</title>
+<style>
+  :root {
+    --bg: #f8f7f4;
+    --surface: #ffffff;
+    --border: #e2e0da;
+    --border-strong: #c8c5bc;
+    --text: #1a1917;
+    --text-secondary: #6b6860;
+    --accent: #2a5f8f;
+    --accent-light: #e8f0f8;
+    --accent-border: #b8d0e8;
+    --warp: #2a5f8f;
+    --weft: #8f2a2a;
+    --tie: #2a7a3b;
+    --cell: 14px;
+    --radius: 6px;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1917;
+      --surface: #242320;
+      --border: #3a3835;
+      --border-strong: #52504c;
+      --text: #f0ede8;
+      --text-secondary: #9a9790;
+      --accent: #6aacdf;
+      --accent-light: #1e2f40;
+      --accent-border: #2a5f8f;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Georgia', serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 2rem 1.5rem 4rem;
+    max-width: 960px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+  h1 { font-size: 1.6rem; font-weight: 400; letter-spacing: -0.02em; margin-bottom: 0.25rem; }
+  h2 { font-size: 1.1rem; font-weight: 400; color: var(--text-secondary); margin: 2rem 0 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+  h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.5rem; }
+  p.lede { font-size: 0.95rem; color: var(--text-secondary); margin-bottom: 1.5rem; max-width: 60ch; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .upload-zone {
+    border: 1.5px dashed var(--border-strong);
+    border-radius: 10px;
+    padding: 2.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+  }
+  .upload-zone:hover, .upload-zone.drag { background: var(--accent-light); border-color: var(--accent); color: var(--text); }
+  .upload-zone input { display: none; }
+
+  .dim-row {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+  }
+  .dim-badge {
+    background: var(--accent-light);
+    border: 1px solid var(--accent-border);
+    border-radius: var(--radius);
+    padding: 0.4rem 0.85rem;
+    font-size: 0.9rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .dim-badge span { color: var(--text-secondary); font-size: 0.82rem; margin-right: 0.25rem; }
+
+  label { font-size: 0.88rem; color: var(--text-secondary); }
+  input[type=number], input[type=range] { 
+    font-family: inherit;
+    font-size: 0.9rem;
+    padding: 0.35rem 0.6rem;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text);
+    width: 80px;
+  }
+  input[type=number]:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-light); }
+
+  button {
+    font-family: inherit;
+    font-size: 0.9rem;
+    padding: 0.55rem 1.25rem;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-weight: 500;
+    transition: opacity 0.15s;
+    letter-spacing: 0.01em;
+  }
+  button:hover { opacity: 0.85; }
+  button:disabled { opacity: 0.4; cursor: default; }
+  button.secondary {
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border-strong);
+  }
+
+  .matrix-container {
+    overflow: auto;
+    max-height: 320px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+  }
+  .matrix-grid {
+    display: grid;
+    gap: 1px;
+    background: var(--border);
+    width: fit-content;
+  }
+  .matrix-cell {
+    width: var(--cell);
+    height: var(--cell);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 7px;
+    font-family: monospace;
+    background: var(--surface);
+  }
+  .matrix-cell.on { background: var(--text); color: var(--bg); }
+
+  .draft-area {
+    display: grid;
+    grid-template-columns: auto auto;
+    grid-template-rows: auto auto;
+    gap: 4px;
+    width: fit-content;
+  }
+  .draft-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    text-align: center;
+    padding: 0 0 4px;
+    font-style: italic;
+  }
+
+  .threading-grid, .tieup-grid, .treadling-grid, .drawdown-grid {
+    display: grid;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border-strong);
+    width: fit-content;
+  }
+  .threading-cell { width: var(--cell); height: var(--cell); background: var(--surface); }
+  .threading-cell.on { background: var(--warp); }
+  .tieup-cell { width: var(--cell); height: var(--cell); background: var(--surface); }
+  .tieup-cell.on { background: var(--tie); }
+  .treadling-cell { width: var(--cell); height: var(--cell); background: var(--surface); }
+  .treadling-cell.on { background: var(--weft); }
+  .drawdown-cell { width: var(--cell); height: var(--cell); background: var(--surface); }
+  .drawdown-cell.on { background: #1a1a1a; }
+
+  .draft-layout {
+    display: grid;
+    grid-template-areas:
+      "legend tieup"
+      "threading drawdown";
+    gap: 6px;
+    width: fit-content;
+  }
+  .draft-legend { grid-area: legend; display: flex; flex-direction: column; justify-content: flex-end; }
+  .draft-tieup { grid-area: tieup; }
+  .draft-threading { grid-area: threading; }
+  .draft-drawdown { grid-area: drawdown; }
+  .draft-treadling { }
+
+  .section-note {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-top: 0.5rem;
+    font-style: italic;
+  }
+
+  .status { font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.75rem; }
+  .error { color: #c0392b; }
+
+  .controls-row {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+  }
+  .controls-row label { display: flex; align-items: center; gap: 0.4rem; }
+
+  .hidden { display: none; }
+
+  /* ── Notes tabs ── */
+  .tab-row { display:flex; border-bottom:2px solid var(--border); margin-bottom:.9rem; }
+  .svd-tab { font-family:Arial,sans-serif; font-size:.82rem; padding:.45rem .9rem; cursor:pointer; border:none; background:none; color:var(--text-secondary); border-bottom:2px solid transparent; margin-bottom:-2px; transition:color .15s; }
+  .svd-tab:hover { color:var(--text); }
+  .svd-tab.active { color:var(--accent); border-bottom-color:var(--accent); font-weight:bold; }
+  .svd-tab-panel { display:none; }
+  .svd-tab-panel.active { display:block; }
+  .obs-q { font-family:Arial,sans-serif; font-size:.82rem; font-weight:bold; margin-bottom:.3rem; color:var(--text); }
+  .obs-q .qn { display:inline-block; background:var(--accent); color:#fff; border-radius:50%; width:1.35em; height:1.35em; text-align:center; line-height:1.35em; font-size:.7rem; margin-right:.32rem; }
+  .notes-area { width:100%; min-height:62px; border:1px solid var(--border-strong); border-radius:var(--radius); padding:.45rem; font-family:Arial,sans-serif; font-size:.8rem; resize:vertical; background:var(--surface); color:var(--text); margin-bottom:.65rem; }
+  .notes-area:focus { outline:2px solid var(--accent); }
+
+  /* ── Colour scheme UI (matching ornament page) ── */
+  .scheme-grid{display:grid;grid-template-columns:1fr 1fr;gap:.4rem;margin-bottom:.5rem}
+  .scheme-btn{font-family:Arial,sans-serif;font-size:.74rem;padding:.28rem .5rem;border:1px solid var(--border);border-radius:3px;cursor:pointer;background:var(--bg);color:var(--text);display:flex;align-items:center;gap:.3rem;transition:all .15s}
+  .scheme-btn:hover{border-color:var(--accent)}
+  .scheme-btn.active{border-color:var(--accent);background:var(--accent-light)}
+  .scheme-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;border:1px solid rgba(0,0,0,.15)}
+  .thread-list{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:.3rem}
+  .thread-row{position:relative}
+  .thread-swatch{width:22px;height:22px;border-radius:3px;border:2px solid var(--border);cursor:pointer;flex-shrink:0;position:relative;display:block}
+  .thread-swatch:hover{border-color:var(--accent)}
+  .thread-swatch::after{content:attr(data-tip);position:absolute;bottom:26px;left:50%;transform:translateX(-50%);background:#222;color:#fff;font-family:Arial,sans-serif;font-size:.64rem;padding:2px 5px;border-radius:3px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .15s;z-index:200}
+  .thread-swatch:hover::after{opacity:1}
+  .swatch-palette{position:absolute;top:26px;left:0;z-index:100;background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:6px;box-shadow:0 4px 16px rgba(0,0,0,.18);display:none;width:210px}
+  .swatch-palette.open{display:block}
+  .palette-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:3px;margin-bottom:6px}
+  .pal-swatch{width:22px;height:22px;border-radius:2px;cursor:pointer;border:1px solid rgba(0,0,0,.12);transition:transform .1s}
+  .pal-swatch:hover{transform:scale(1.2)}
+  .palette-custom{display:flex;align-items:center;gap:6px;border-top:1px solid var(--border);padding-top:5px;margin-top:2px}
+  .palette-custom label{font-family:Arial,sans-serif;font-size:.72rem;color:var(--text-secondary)}
+  .palette-custom input[type=color]{width:36px;height:26px;border:1px solid var(--border);border-radius:3px;cursor:pointer;padding:2px;background:none}
+  .color-slot{display:flex;flex-direction:column;align-items:center;gap:.2rem}
+  .color-slot label{font-family:Arial,sans-serif;font-size:.7rem;color:var(--text-secondary)}
+  .pattern-btn{font-family:Arial,sans-serif;font-size:.74rem;padding:.28rem .55rem;border:1px solid var(--border);border-radius:3px;cursor:pointer;background:var(--bg);color:var(--text);transition:all .12s}
+  .pattern-btn:hover{border-color:var(--accent)}
+  .pattern-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .section-title-sm{font-family:Arial,sans-serif;font-size:.68rem;letter-spacing:.07em;text-transform:uppercase;color:var(--text-secondary);margin:.6rem 0 .3rem}
+  .weft-grid{display:grid;grid-template-columns:1fr 1fr;gap:2px 8px}
+  .weft-col{display:grid;grid-template-columns:auto auto auto;gap:2px 5px;align-items:center}
+  .weft-header{font-family:Arial,sans-serif;font-size:.65rem;color:var(--text-secondary);padding-bottom:3px}
+  .treadle-sel{font-family:Arial,sans-serif;font-size:.7rem;border:1px solid var(--border);border-radius:3px;background:var(--bg);color:var(--text);padding:1px 3px;cursor:pointer}
+  .pick-lbl{font-family:Arial,sans-serif;font-size:.66rem;color:var(--text-secondary);text-align:right;padding-right:2px}
+  input[type=color]{width:36px;height:26px;padding:1px 2px;cursor:pointer;border-radius:4px;border:1px solid var(--border);background:none}
+
+  .legend-row { display: flex; gap: 1rem; flex-wrap: wrap; margin: 0.75rem 0 0; font-size: 0.8rem; }
+  .legend-row span { display: flex; align-items: center; gap: 6px; }
+  .legend-swatch { width: 14px; height: 14px; border-radius: 2px; border: 1px solid var(--border); flex-shrink: 0; }
+
+  .scroll-wrap { overflow: auto; }
+
+  #treadling-wrap {
+    display: flex;
+    flex-direction: row;
+    gap: 6px;
+    align-items: flex-start;
+  }
+</style>
+</head>
+<body>
+
+<h1>SVD weaving draft explorer</h1>
+<p class="lede">Upload a greyscale or black-and-white BMP, scale it to your desired dimensions, set a shaft count Z, and decompose it into threading, tie-up, and treadling via singular value decomposition.</p>
+
+<!-- STEP 1: Upload -->
+<h2>1. Upload image</h2>
+<div class="card">
+  <div class="upload-zone" id="dropzone">
+    <div style="font-size:2rem;margin-bottom:0.5rem">⬆</div>
+    <div><strong>Drop a BMP file here</strong>, or click to browse</div>
+    <div style="margin-top:0.4rem;font-size:0.8rem">Greyscale or black &amp; white BMP</div>
+    <input type="file" id="fileInput" accept=".bmp,image/bmp">
+  </div>
+  <div class="status" id="uploadStatus"></div>
+</div>
+
+<!-- STEP 2: Image dimensions + scale -->
+<div id="scaleSection" class="hidden">
+  <h2>2. Image dimensions &amp; scale</h2>
+  <div class="card">
+    <div class="dim-row" id="dimDisplay"></div>
+    <div class="controls-row">
+      <label>
+        Scale:
+        <input type="number" id="scaleInput" value="100" min="1" max="100" step="1">
+        <span style="font-size:0.9rem">%</span>
+      </label>
+      <button class="secondary" onclick="applyScale()">Apply</button>
+    </div>
+    <div id="currentDims" style="font-size:0.85rem;color:var(--text-secondary);"></div>
+  </div>
+
+  <h2>3. Matrix view</h2>
+  <div class="card">
+    <p class="section-note" style="margin-bottom:0.75rem">Each pixel shown as 1 (dark) or 0 (light). Scrollable for large images.</p>
+    <div class="matrix-container" id="matrixContainer"></div>
+  </div>
+</div>
+
+<!-- STEP 3: SVD decomposition -->
+<div id="svdSection" class="hidden">
+  <h2>4. Set shaft count Z &amp; compute draft</h2>
+  <div class="card">
+    <div class="controls-row">
+      <label>Shafts / treadles (Z):
+        <input type="number" id="zInput" value="4" min="1" max="64" step="1">
+      </label>
+      <button id="computeBtn" onclick="computeDraft()">Create draft through matrix factorization</button>
+      <label style="margin-left:0.5rem;font-size:0.85rem;display:flex;align-items:center;gap:0.4rem">
+        <input type="checkbox" id="useHungarian"> Use optimal assignment (Hungarian algorithm — slower but more accurate)
+      </label>
+    </div>
+    <div class="status" id="svdStatus"></div>
+  </div>
+</div>
+
+<!-- STEP 4: Draft display -->
+<div id="draftSection" class="hidden">
+  <h2>5. Weaving draft</h2>
+  <div class="card">
+    <div class="legend-row">
+      <span><span class="legend-swatch" style="background:var(--warp)"></span> Threading (Z shafts × X warps)</span>
+      <span><span class="legend-swatch" style="background:var(--tie)"></span> Tie-up (Z × Z)</span>
+      <span><span class="legend-swatch" style="background:var(--weft)"></span> Treadling (Y picks × Z treadles)</span>
+      <span><span class="legend-swatch" style="background:#1a1a1a"></span> Drawdown (Y × X)</span>
+    </div>
+
+    <div style="margin-top:1.25rem" class="scroll-wrap">
+      <p class="section-note" style="margin-bottom:0.75rem">Standard draft layout: threading (shafts × warps) top-left, tie-up top-right, treadling (picks × treadles) below tie-up, drawdown bottom-left.</p>
+
+      <!-- Threading + Tie-up row -->
+      <div style="display:flex;gap:6px;align-items:flex-end;margin-bottom:4px;">
+        <div>
+          <div class="draft-label">Threading — rows=shafts, cols=warps</div>
+          <div class="scroll-wrap"><div id="threadingGrid" class="threading-grid"></div></div>
+        </div>
+        <div>
+          <div class="draft-label">Tie-up (Z×Z)</div>
+          <div id="tieupGrid" class="tieup-grid"></div>
+        </div>
+      </div>
+
+      <!-- Drawdown + Treadling row -->
+      <div style="display:flex;gap:6px;align-items:flex-start;">
+        <div>
+          <div class="draft-label">Drawdown — rows=picks, cols=warps</div>
+          <div class="scroll-wrap"><div id="drawdownGrid" class="drawdown-grid"></div></div>
+        </div>
+        <div>
+          <div class="draft-label">Treadling — rows=picks, cols=treadles</div>
+          <div class="scroll-wrap"><div id="treadlingGrid" class="treadling-grid"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="status" id="draftStatus"></div>
+  </div>
+
+  <!-- COLOUR SCHEMES -->
+  <h2>6. Colour schemes</h2>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
+
+    <!-- Warp colours -->
+    <div class="card">
+      <h3>Warp colours</h3>
+      <div class="section-title-sm">Presets</div>
+      <div class="scheme-grid" id="warpSchemeGrid"></div>
+      <details style="margin:.5rem 0 .6rem">
+        <summary style="font-family:Arial,sans-serif;font-size:.76rem;color:var(--accent);cursor:pointer;user-select:none">＋ Create custom scheme</summary>
+        <div style="padding:.5rem 0 .2rem">
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:flex-end;margin-bottom:.5rem">
+            <div class="color-slot"><label>Colour A</label><input type="color" id="customWarpA" value="#1a1a1a" oninput="updateWarpPreview()"></div>
+            <div class="color-slot"><label>Colour B</label><input type="color" id="customWarpB" value="#ffffff" oninput="updateWarpPreview()"></div>
+            <div class="color-slot"><label>Colour C</label><input type="color" id="customWarpC" value="#2a5f8f" oninput="updateWarpPreview()"></div>
+          </div>
+          <div style="display:flex;gap:.35rem;flex-wrap:wrap;margin-bottom:.4rem" id="customWarpPatterns"></div>
+          <canvas id="customWarpPreview" width="240" height="18" style="margin-bottom:.4rem;display:block;border:1px solid var(--border);border-radius:2px;image-rendering:pixelated;width:100%"></canvas>
+          <div style="display:flex;gap:.4rem;align-items:center">
+            <input type="text" id="customWarpName" placeholder="Scheme name…" style="flex:1;font-family:Arial,sans-serif;font-size:.78rem;border:1px solid var(--border);border-radius:3px;padding:.28rem .45rem;background:var(--bg);color:var(--text)">
+            <button class="secondary" id="saveCustomWarp" style="white-space:nowrap">＋ Add</button>
+          </div>
+        </div>
+      </details>
+      <div class="section-title-sm">Individual threads — click a swatch to change</div>
+      <div class="thread-list" id="warpThreadList"></div>
+    </div>
+
+    <!-- Weft colours -->
+    <div class="card">
+      <h3>Weft colours</h3>
+      <div class="section-title-sm">Presets</div>
+      <div class="scheme-grid" id="weftSchemeGrid"></div>
+      <details style="margin:.5rem 0 .6rem">
+        <summary style="font-family:Arial,sans-serif;font-size:.76rem;color:var(--accent);cursor:pointer;user-select:none">＋ Create custom scheme</summary>
+        <div style="padding:.5rem 0 .2rem">
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:flex-end;margin-bottom:.5rem">
+            <div class="color-slot"><label>Colour A</label><input type="color" id="customWeftA" value="#8B3A3A" oninput="updateWeftPreview()"></div>
+            <div class="color-slot"><label>Colour B</label><input type="color" id="customWeftB" value="#D4A04A" oninput="updateWeftPreview()"></div>
+            <div class="color-slot"><label>Colour C</label><input type="color" id="customWeftC" value="#ffffff" oninput="updateWeftPreview()"></div>
+          </div>
+          <div style="display:flex;gap:.35rem;flex-wrap:wrap;margin-bottom:.4rem" id="customWeftPatterns"></div>
+          <canvas id="customWeftPreview" width="240" height="18" style="margin-bottom:.4rem;display:block;border:1px solid var(--border);border-radius:2px;image-rendering:pixelated;width:100%"></canvas>
+          <div style="display:flex;gap:.4rem;align-items:center">
+            <input type="text" id="customWeftName" placeholder="Scheme name…" style="flex:1;font-family:Arial,sans-serif;font-size:.78rem;border:1px solid var(--border);border-radius:3px;padding:.28rem .45rem;background:var(--bg);color:var(--text)">
+            <button class="secondary" id="saveCustomWeft" style="white-space:nowrap">＋ Add</button>
+          </div>
+        </div>
+      </details>
+      <div class="section-title-sm">Individual picks — click a swatch to change</div>
+      <div class="thread-list" id="weftThreadList"></div>
+    </div>
+
+  </div>
+
+  <!-- COLOURED DRAWDOWN -->
+  <h2>7. Woven cloth — coloured drawdown</h2>
+  <div class="card">
+    <p class="section-note" style="margin-bottom:0.75rem">Warp up = warp colour. Weft up = weft colour. Updates live as you change colours.</p>
+    <div class="scroll-wrap">
+      <canvas id="colouredDrawdown" style="display:block;image-rendering:pixelated;border:1px solid var(--border);border-radius:2px;max-width:100%"></canvas>
+      <div style="font-family:Arial,sans-serif;font-size:.72rem;color:var(--text-secondary);margin-top:.3rem" id="drawdownNote"></div>
+    </div>
+  </div>
+
+  <!-- NOTES -->
+  <h2>8. Notes</h2>
+  <div class="card">
+    <div class="tab-row">
+      <button class="svd-tab active" data-tab="tab-obs">Observations</button>
+      <button class="svd-tab" data-tab="tab-exp">Experiments</button>
+      <button class="svd-tab" data-tab="tab-free">My Notes</button>
+    </div>
+
+    <div class="svd-tab-panel active" id="tab-obs">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.4rem">
+        <div>
+          <div class="obs-q"><span class="qn">1</span> Describe the original image. What kind of pattern or structure does it show?</div>
+          <textarea class="notes-area" placeholder="What do you see in the original bitmap?"></textarea>
+          <div class="obs-q"><span class="qn">2</span> With Z smaller than the image dimensions, how does the drawdown compare to the original? What information is lost?</div>
+          <textarea class="notes-area" placeholder="Compare the drawdown to the original matrix…"></textarea>
+          <div class="obs-q"><span class="qn">3</span> What happens to the threading when Z increases? Do the shaft patterns become more complex?</div>
+          <textarea class="notes-area" placeholder="Describe how the threading changes as Z grows…"></textarea>
+        </div>
+        <div>
+          <div class="obs-q"><span class="qn">4</span> Compare the argmax and Hungarian algorithm results at the same Z. How different is the drawdown? Is one noticeably closer to the original?</div>
+          <textarea class="notes-area" placeholder="Describe the difference between the two assignment methods…"></textarea>
+          <div class="obs-q"><span class="qn">5</span> How does the tie-up change when Z is small vs. large? What does its structure tell you about the image?</div>
+          <textarea class="notes-area" placeholder="Describe the tie-up structure at different values of Z…"></textarea>
+          <div class="obs-q"><span class="qn">6</span> Choose a colour scheme that you feel best shows the pattern in your image. Describe your choices and why they work.</div>
+          <textarea class="notes-area" placeholder="Describe your warp/weft colour choices and the effect…"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="svd-tab-panel" id="tab-exp">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.4rem">
+        <div>
+          <div class="obs-q" style="margin-bottom:.5rem">Things to try:</div>
+          <ul style="font-family:Arial,sans-serif;font-size:.8rem;line-height:2;padding-left:1.1rem;color:var(--text)">
+            <li>Set Z = 1. The entire image is reduced to a single shaft and treadle — what does the drawdown look like?</li>
+            <li>Set Z equal to the smaller image dimension. Does the drawdown perfectly reproduce the image?</li>
+            <li>Draw a simple shape (checkerboard, diagonal stripe) in the matrix editor and see how SVD factors it.</li>
+            <li>Try the Hungarian algorithm on a large image — how much slower is it, and is the improvement visible?</li>
+            <li>Scale the image to 50% before factoring. How does the lower resolution affect the draft?</li>
+            <li>Edit individual pixels after scaling to fix details, then recompute the draft.</li>
+          </ul>
+        </div>
+        <div>
+          <div class="obs-q" style="margin-bottom:.4rem">What to look for:</div>
+          <ul style="font-family:Arial,sans-serif;font-size:.8rem;line-height:2;padding-left:1.1rem;color:var(--text)">
+            <li><strong>Singular values:</strong> The SVD assigns each shaft/treadle pair a "weight" (singular value). Large Z captures more weight and more detail.</li>
+            <li><strong>Threading pattern:</strong> Each shaft corresponds to a right singular vector — a characteristic pattern across the warps. Shafts with higher-index singular values capture finer detail.</li>
+            <li><strong>Tie-up complexity:</strong> A complex tie-up means many shaft/treadle combinations are needed. A simple image may have a nearly diagonal tie-up even at large Z.</li>
+            <li><strong>Quantisation loss:</strong> Binarising continuous SVD values always loses some information. The gap between drawdown and original is this quantisation error.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="svd-tab-panel" id="tab-free">
+      <textarea class="notes-area" style="min-height:180px" placeholder="Use this space for freeform notes about your SVD draft discoveries…"></textarea>
+    </div>
+  </div>
+
+  <!-- DOWNLOAD ROW -->
+  <div class="card" style="margin-top:1rem">
+    <div style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center">
+      <button id="wifBtn" onclick="exportWIF()" disabled>⬇ Download WIF file</button>
+      <button id="notesBtn" onclick="exportNotes()" disabled>⬇ Download notes</button>
+      <span style="font-size:0.82rem;color:var(--text-secondary)">Downloads include all colour assignments and observation answers.</span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+let originalMatrix = null;   // full-res 0/1 matrix [rows][cols]
+let currentMatrix = null;    // scaled version
+let origWidth = 0, origHeight = 0;
+
+// ── BMP Parser ─────────────────────────────────────────────────────────────
+function parseBMP(buffer) {
+  const view = new DataView(buffer);
+  if (view.getUint8(0) !== 0x42 || view.getUint8(1) !== 0x4D) throw new Error("Not a BMP file.");
+  const pixelOffset = view.getUint32(14, true);
+  const width  = view.getInt32(18, true);
+  const height = view.getInt32(22, true);
+  const bpp    = view.getUint16(28, true);
+  const compression = view.getUint32(30, true);
+  const absHeight = Math.abs(height);
+  const topDown = height < 0;
+
+  // colour table for ≤8 bpp
+  let palette = null;
+  if (bpp <= 8) {
+    const colourCount = view.getUint32(46, true) || (1 << bpp);
+    palette = [];
+    const tableStart = 14 + view.getUint32(14, true);
+    for (let i = 0; i < colourCount; i++) {
+      const b = view.getUint8(tableStart + i * 4);
+      const g = view.getUint8(tableStart + i * 4 + 1);
+      const r = view.getUint8(tableStart + i * 4 + 2);
+      palette.push((r + g + b) / 3);
+    }
+  }
+
+  const rowSize = Math.floor((bpp * width + 31) / 32) * 4;
+  const matrix = [];
+
+  for (let row = 0; row < absHeight; row++) {
+    const srcRow = topDown ? row : (absHeight - 1 - row);
+    const rowOff = pixelOffset + srcRow * rowSize;
+    const matRow = [];
+
+    for (let col = 0; col < width; col++) {
+      let grey;
+      if (bpp === 1) {
+        const byteIdx = rowOff + Math.floor(col / 8);
+        const bit = 7 - (col % 8);
+        const idx = (view.getUint8(byteIdx) >> bit) & 1;
+        grey = palette ? palette[idx] : idx * 255;
+      } else if (bpp === 4) {
+        const byteIdx = rowOff + Math.floor(col / 2);
+        const nibble = (col % 2 === 0) ? (view.getUint8(byteIdx) >> 4) : (view.getUint8(byteIdx) & 0x0F);
+        grey = palette ? palette[nibble] : nibble * 17;
+      } else if (bpp === 8) {
+        const idx = view.getUint8(rowOff + col);
+        grey = palette ? palette[idx] : idx;
+      } else if (bpp === 24) {
+        const b = view.getUint8(rowOff + col * 3);
+        const g = view.getUint8(rowOff + col * 3 + 1);
+        const r = view.getUint8(rowOff + col * 3 + 2);
+        grey = 0.299 * r + 0.587 * g + 0.114 * b;
+      } else if (bpp === 32) {
+        const b = view.getUint8(rowOff + col * 4);
+        const g = view.getUint8(rowOff + col * 4 + 1);
+        const r = view.getUint8(rowOff + col * 4 + 2);
+        grey = 0.299 * r + 0.587 * g + 0.114 * b;
+      } else {
+        grey = 128;
+      }
+      matRow.push(grey < 128 ? 1 : 0);
+    }
+    matrix.push(matRow);
+  }
+  return { matrix, width, height: absHeight };
+}
+
+// ── Nearest-neighbour scale ────────────────────────────────────────────────
+function scaleMatrix(mat, pct) {
+  const srcH = mat.length, srcW = mat[0].length;
+  const newH = Math.max(1, Math.round(srcH * pct / 100));
+  const newW = Math.max(1, Math.round(srcW * pct / 100));
+  const out = [];
+  for (let r = 0; r < newH; r++) {
+    const sr = Math.floor(r * srcH / newH);
+    const row = [];
+    for (let c = 0; c < newW; c++) {
+      const sc = Math.floor(c * srcW / newW);
+      row.push(mat[sr][sc]);
+    }
+    out.push(row);
+  }
+  return out;
+}
+
+// ── Render matrix as editable grid ────────────────────────────────────────
+// Supports click to toggle and click-drag to paint.
+// paintValue: the value being painted in the current drag (0 or 1, set on mousedown)
+let _paintValue = null;
+
+function renderMatrix(container, mat) {
+  const rows = mat.length, cols = mat[0].length;
+  container.innerHTML = '';
+  const grid = document.createElement('div');
+  grid.className = 'matrix-grid';
+  grid.style.gridTemplateColumns = `repeat(${cols}, var(--cell))`;
+
+  // Build a flat array of cell elements for fast lookup
+  const cells = [];
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const cell = document.createElement('div');
+      cell.className = 'matrix-cell' + (mat[r][c] ? ' on' : '');
+      cell.dataset.r = r;
+      cell.dataset.c = c;
+      cells.push(cell);
+      grid.appendChild(cell);
+    }
+  }
+
+  function paintCell(cell) {
+    const r = +cell.dataset.r, c = +cell.dataset.c;
+    if (currentMatrix[r][c] === _paintValue) return;
+    currentMatrix[r][c] = _paintValue;
+    cell.className = 'matrix-cell' + (_paintValue ? ' on' : '');
+  }
+
+  grid.addEventListener('mousedown', e => {
+    const cell = e.target.closest('.matrix-cell');
+    if (!cell) return;
+    e.preventDefault();
+    const r = +cell.dataset.r, c = +cell.dataset.c;
+    // Toggle: paint with the opposite of the clicked cell's current value
+    _paintValue = currentMatrix[r][c] ? 0 : 1;
+    paintCell(cell);
+  });
+
+  grid.addEventListener('mouseover', e => {
+    if (_paintValue === null) return;
+    const cell = e.target.closest('.matrix-cell');
+    if (cell) paintCell(cell);
+  });
+
+  // Touch support for mobile
+  grid.addEventListener('touchstart', e => {
+    const touch = e.touches[0];
+    const cell = document.elementFromPoint(touch.clientX, touch.clientY)?.closest('.matrix-cell');
+    if (!cell) return;
+    e.preventDefault();
+    const r = +cell.dataset.r, c = +cell.dataset.c;
+    _paintValue = currentMatrix[r][c] ? 0 : 1;
+    paintCell(cell);
+  }, {passive: false});
+
+  grid.addEventListener('touchmove', e => {
+    if (_paintValue === null) return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    const cell = document.elementFromPoint(touch.clientX, touch.clientY)?.closest('.matrix-cell');
+    if (cell) paintCell(cell);
+  }, {passive: false});
+
+  container.appendChild(grid);
+}
+
+// Stop painting on mouseup anywhere
+document.addEventListener('mouseup', () => { _paintValue = null; });
+document.addEventListener('touchend', () => { _paintValue = null; });
+
+// ── Generic grid renderer ──────────────────────────────────────────────────
+function renderGrid(el, mat, onClass) {
+  el.innerHTML = '';
+  if (!mat || !mat.length) return;
+  const rows = mat.length, cols = mat[0].length;
+  el.style.gridTemplateColumns = `repeat(${cols}, var(--cell))`;
+  el.style.gridTemplateRows    = `repeat(${rows}, var(--cell))`;
+  mat.forEach(row => {
+    row.forEach(v => {
+      const cell = document.createElement('div');
+      cell.className = onClass + (v ? ' on' : '');
+      el.appendChild(cell);
+    });
+  });
+}
+
+// ── Upload handling ────────────────────────────────────────────────────────
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('fileInput');
+
+dropzone.addEventListener('click', () => fileInput.click());
+dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag'); });
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag'));
+dropzone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropzone.classList.remove('drag');
+  if (e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', () => { if (fileInput.files[0]) processFile(fileInput.files[0]); });
+
+function processFile(file) {
+  const status = document.getElementById('uploadStatus');
+  status.textContent = 'Reading…';
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const result = parseBMP(e.target.result);
+      originalMatrix = result.matrix;
+      origWidth = result.width;
+      origHeight = result.height;
+      currentMatrix = originalMatrix.map(r => [...r]);
+
+      status.textContent = `Loaded "${file.name}" — ${origWidth} × ${origHeight} px`;
+      document.getElementById('scaleSection').classList.remove('hidden');
+      document.getElementById('svdSection').classList.remove('hidden');
+      updateDimDisplay(origWidth, origHeight, 100);
+      renderMatrix(document.getElementById('matrixContainer'), currentMatrix);
+    } catch(err) {
+      status.textContent = '';
+      status.innerHTML = `<span class="error">Could not parse BMP: ${err.message}</span>`;
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function updateDimDisplay(w, h, pct) {
+  const el = document.getElementById('dimDisplay');
+  el.innerHTML = `
+    <div class="dim-badge"><span>X (width)</span>${w} px</div>
+    <div class="dim-badge"><span>Y (height)</span>${h} px</div>
+    <div class="dim-badge"><span>Scale</span>${pct}%</div>
+  `;
+  document.getElementById('currentDims').textContent =
+    `Original: ${origWidth} × ${origHeight}  →  Current: ${w} × ${h}`;
+}
+
+function applyScale() {
+  const pct = parseFloat(document.getElementById('scaleInput').value);
+  if (isNaN(pct) || pct < 1 || pct > 100) {
+    alert('Enter a percentage between 1 and 100.');
+    return;
+  }
+  currentMatrix = scaleMatrix(originalMatrix, pct);
+  const h = currentMatrix.length, w = currentMatrix[0].length;
+  updateDimDisplay(w, h, pct);
+  renderMatrix(document.getElementById('matrixContainer'), currentMatrix);
+  document.getElementById('draftSection').classList.add('hidden');
+}
+
+// ── Linear algebra helpers ─────────────────────────────────────────────────
+
+// Transpose a plain 2D array (array of arrays), returns array of Float64Arrays
+function transpose(A) {
+  const m = A.length, n = A[0].length;
+  const T = Array.from({length: n}, () => new Float64Array(m));
+  for (let i = 0; i < m; i++)
+    for (let j = 0; j < n; j++)
+      T[j][i] = A[i][j];
+  return T;
+}
+
+// Symmetric Jacobi eigendecomposition of an n×n symmetric matrix B.
+// Returns { vals: Float64Array(n), vecs: n×n plain array (columns = eigenvectors) }
+function jacobiEigen(B, n) {
+  // Working copy as plain arrays
+  const A = B.map(r => Array.from(r));
+  // Accumulate rotations in V (columns = eigenvectors), start as identity
+  const V = Array.from({length: n}, (_, i) =>
+    Array.from({length: n}, (_, j) => (i === j ? 1.0 : 0.0)));
+
+  for (let sweep = 0; sweep < 50 * n * n; sweep++) {
+    // Find largest off-diagonal element
+    let maxVal = 0, p = 0, q = 1;
+    for (let i = 0; i < n; i++)
+      for (let j = i + 1; j < n; j++) {
+        const v = Math.abs(A[i][j]);
+        if (v > maxVal) { maxVal = v; p = i; q = j; }
+      }
+    if (maxVal < 1e-13) break;
+
+    // Jacobi rotation angle
+    const theta = (A[q][q] - A[p][p]) / (2.0 * A[p][q]);
+    const t = theta >= 0
+      ?  1.0 / (theta + Math.sqrt(1.0 + theta * theta))
+      :  1.0 / (theta - Math.sqrt(1.0 + theta * theta));
+    const c = 1.0 / Math.sqrt(1.0 + t * t);
+    const s = t * c;
+
+    // Update diagonal and zero the pivot element
+    A[p][p] -= t * A[p][q];
+    A[q][q] += t * A[p][q];
+    A[p][q] = 0.0;
+    A[q][p] = 0.0;
+
+    // Update remaining rows/cols
+    for (let r = 0; r < n; r++) {
+      if (r === p || r === q) continue;
+      const Apr = A[p][r], Aqr = A[q][r];
+      A[p][r] = c * Apr - s * Aqr;  A[r][p] = A[p][r];
+      A[q][r] = s * Apr + c * Aqr;  A[r][q] = A[q][r];
+    }
+
+    // Accumulate rotation into V
+    for (let r = 0; r < n; r++) {
+      const Vrp = V[r][p], Vrq = V[r][q];
+      V[r][p] = c * Vrp - s * Vrq;
+      V[r][q] = s * Vrp + c * Vrq;
+    }
+  }
+
+  const vals = new Float64Array(n);
+  for (let i = 0; i < n; i++) vals[i] = A[i][i];
+  return { vals, vecs: V };
+}
+
+// Thin SVD of matrix M (shape: Y rows × X cols).
+// Returns { U: Y×k, S: Float64Array(k), Vt: k×X } where k = min(Y, X)
+// M = U * diag(S) * Vt  (up to numerical precision)
+//
+// Strategy: always diagonalise A^T A (X×X), whose eigenvectors ARE the
+// right singular vectors V (cols of V, rows of Vt). Then derive U = AV/sigma.
+// For wide images (X >> Y) this is more work than diagonalising AA^T, but it
+// is unambiguous — V always spans X-space (warp space), U spans Y-space
+// (pick space), which is exactly what the weaving draft needs.
+function thinSVD(M) {
+  const Y = M.length;
+  const X = M[0].length;
+  const k = Math.min(Y, X);
+
+  const A = M.map(r => Float64Array.from(r));
+
+  // Build A^T A  (X×X)
+  const ATA = Array.from({length: X}, () => new Float64Array(X));
+  for (let i = 0; i < X; i++)
+    for (let j = 0; j < X; j++) {
+      let s = 0;
+      for (let r = 0; r < Y; r++) s += A[r][i] * A[r][j];
+      ATA[i][j] = s;
+    }
+
+  // Eigendecompose A^T A — eigenvectors are right singular vectors (cols of V)
+  const { vals, vecs } = jacobiEigen(ATA, X);
+
+  // Sort by descending eigenvalue, keep top k
+  const order = Array.from({length: X}, (_, i) => i)
+    .sort((a, b) => vals[b] - vals[a])
+    .slice(0, k);
+
+  const S = new Float64Array(k);
+  for (let i = 0; i < k; i++) S[i] = Math.sqrt(Math.max(0, vals[order[i]]));
+
+  // Vt[j][x] = vecs[x][order[j]]   — j-th right singular vector as a row
+  const Vt = Array.from({length: k}, (_, j) =>
+    Float64Array.from({length: X}, (_, x) => vecs[x][order[j]])
+  );
+
+  // U = A V / sigma  →  U[y][j] = (sum_x A[y][x] * Vt[j][x]) / S[j]
+  const U = Array.from({length: Y}, (_, y) =>
+    Array.from({length: k}, (_, j) => {
+      let s = 0;
+      for (let x = 0; x < X; x++) s += A[y][x] * Vt[j][x];
+      return S[j] > 1e-12 ? s / S[j] : 0;
+    })
+  );
+
+  return { U, S, Vt, k };
+  // U:  Y×k  — left singular vectors;  U[pick][component]
+  // S:  k    — singular values, descending
+  // Vt: k×X  — right singular vectors; Vt[component][warp]
+}
+
+// Binarise a 2D array by its global median of absolute values
+function binariseByMedian(mat) {
+  const flat = mat.flatMap(r => Array.from(r).map(Math.abs)).sort((a, b) => a - b);
+  const med = flat[Math.floor(flat.length / 2)] || 0.5;
+  return mat.map(r => Array.from(r).map(v => (Math.abs(v) > med ? 1 : 0)));
+}
+
+// ── Hungarian algorithm (Munkres) for minimum cost assignment ──────────────
+// Solves the n×m assignment problem (n workers, m jobs, n <= m).
+// cost[i][j] = cost of assigning worker i to job j.
+// Returns assignment: Int32Array of length n where assignment[i] = job index.
+function hungarian(cost) {
+  const n = cost.length;
+  const m = cost[0].length;
+  // Pad to square if needed
+  const N = Math.max(n, m);
+  // u[i], v[j] = potentials; p[j] = worker assigned to job j (0 = none)
+  const u = new Float64Array(N + 1);
+  const v = new Float64Array(N + 1);
+  const p = new Int32Array(N + 1);  // p[j] = worker (1-based) assigned to job j
+  const way = new Int32Array(N + 1);
+
+  // Extend cost to N×N with zeros
+  function c(i, j) {
+    // i, j are 1-based
+    if (i <= n && j <= m) return cost[i - 1][j - 1];
+    return 0;
+  }
+
+  for (let i = 1; i <= N; i++) {
+    p[0] = i;
+    let j0 = 0;
+    const minVal = new Float64Array(N + 1).fill(Infinity);
+    const used = new Uint8Array(N + 1);
+    do {
+      used[j0] = 1;
+      let i0 = p[j0], delta = Infinity, j1 = -1;
+      for (let j = 1; j <= N; j++) {
+        if (!used[j]) {
+          const cur = c(i0, j) - u[i0] - v[j];
+          if (cur < minVal[j]) { minVal[j] = cur; way[j] = j0; }
+          if (minVal[j] < delta) { delta = minVal[j]; j1 = j; }
+        }
+      }
+      for (let j = 0; j <= N; j++) {
+        if (used[j]) { u[p[j]] += delta; v[j] -= delta; }
+        else { minVal[j] -= delta; }
+      }
+      j0 = j1;
+    } while (p[j0] !== 0);
+    do {
+      p[j0] = p[way[j0]];
+      j0 = way[j0];
+    } while (j0);
+  }
+
+  // Extract assignment for original n workers
+  const assignment = new Int32Array(n);
+  for (let j = 1; j <= N; j++) {
+    if (p[j] >= 1 && p[j] <= n && j <= m) {
+      assignment[p[j] - 1] = j - 1;  // 0-based
+    }
+  }
+  return assignment;
+}
+
+// ── Compute draft ──────────────────────────────────────────────────────────
+function computeDraft() {
+  const Z = parseInt(document.getElementById('zInput').value);
+  if (isNaN(Z) || Z < 1) { alert('Enter a valid Z ≥ 1.'); return; }
+  if (!currentMatrix) { alert('No image loaded.'); return; }
+
+  const useHungarian = document.getElementById('useHungarian').checked;
+  const status = document.getElementById('svdStatus');
+  status.textContent = useHungarian ? 'Computing SVD + optimal assignment…' : 'Computing SVD…';
+  document.getElementById('computeBtn').disabled = true;
+
+  setTimeout(() => {
+    try {
+      // currentMatrix is stored as [row][col] = [y][x], shape Y×X
+      const Y = currentMatrix.length;     // number of picks (rows)
+      const X = currentMatrix[0].length;  // number of warps (cols)
+
+      // SVD:  M (Y×X)  =  U (Y×r) · diag(S) (r×r) · Vt (r×X)
+      // where r = min(Y,X) — the true rank limit of the matrix.
+      // We then keep only the top Z components (or r if r < Z),
+      // and pad all three draft matrices out to exactly Z shafts/treadles.
+      const { U, S, Vt, k: r } = thinSVD(currentMatrix);
+      // U: Y×r, S: length r (descending), Vt: r×X
+
+      // How many singular components we actually have to work with
+      const kUse = Math.min(r, Z);  // components extracted from SVD
+      // If Z > r we pad with zeros to reach Z; if Z <= r we slice to Z.
+
+      // Convention used throughout:
+      //   threading[shaft][warp]   shape Z×X  — row = shaft, col = warp
+      //   tieup[shaft][treadle]    shape Z×Z  — row = shaft, col = treadle
+      //   treadling[pick][treadle] shape Y×Z  — row = pick,  col = treadle
+      //   drawdown[pick][warp]     shape Y×X  — row = pick,  col = warp
+
+      // ── Threading: Z×X ───────────────────────────────────────────────────
+      // Each warp thread must go on exactly one shaft.
+      // Argmax: assign each warp to the shaft with largest |Vt| value.
+      // Hungarian: find the globally optimal 1-to-1 warp→shaft assignment
+      //   minimising total |Vt| loss. Only possible when X <= kUse (enough
+      //   singular components to assign each warp to a distinct shaft).
+      const threadingBin = Array.from({length: Z}, () => new Array(X).fill(0));
+      const shaftOf = new Int32Array(X);
+
+      if (useHungarian && X <= kUse) {
+        // Cost matrix: X workers (warps) × kUse jobs (shafts)
+        // cost[x][i] = -|Vt[i][x]|  (negate to turn max into min)
+        const costT = Array.from({length: X}, (_, x) =>
+          Array.from({length: kUse}, (_, i) => -Math.abs(Vt[i][x]))
+        );
+        const assign = hungarian(costT);  // assign[x] = shaft index
+        for (let x = 0; x < X; x++) {
+          shaftOf[x] = assign[x];
+          threadingBin[assign[x]][x] = 1;
+        }
+      } else {
+        // Argmax fallback
+        for (let x = 0; x < X; x++) {
+          let bestShaft = 0, bestVal = -1;
+          for (let i = 0; i < kUse; i++) {
+            const v = Math.abs(Vt[i][x]);
+            if (v > bestVal) { bestVal = v; bestShaft = i; }
+          }
+          threadingBin[bestShaft][x] = 1;
+          shaftOf[x] = bestShaft;
+        }
+      }                                                                     // Z×X ✓
+
+      // ── Treadling: Y×Z ───────────────────────────────────────────────────
+      // Each pick is assigned to exactly one treadle.
+      // Same choice: argmax or Hungarian over U rows.
+      const treadlingBin = Array.from({length: Y}, () => new Array(Z).fill(0));
+      const treadleOf = new Int32Array(Y);
+
+      if (useHungarian && Y <= kUse) {
+        // Cost matrix: Y workers (picks) × kUse jobs (treadles)
+        const costU = Array.from({length: Y}, (_, y) =>
+          Array.from({length: kUse}, (_, j) => -Math.abs(U[y][j]))
+        );
+        const assign = hungarian(costU);  // assign[y] = treadle index
+        for (let y = 0; y < Y; y++) {
+          treadleOf[y] = assign[y];
+          treadlingBin[y][assign[y]] = 1;
+        }
+      } else {
+        // Argmax fallback
+        for (let y = 0; y < Y; y++) {
+          let bestTreadle = 0, bestVal = -1;
+          for (let j = 0; j < kUse; j++) {
+            const v = Math.abs(U[y][j]);
+            if (v > bestVal) { bestVal = v; bestTreadle = j; }
+          }
+          treadlingBin[y][bestTreadle] = 1;
+          treadleOf[y] = bestTreadle;
+        }
+      }                                                                     // Y×Z ✓
+
+      // ── Tie-up: Z×Z ──────────────────────────────────────────────────────
+      // With threading and treadling each assigning exactly one shaft/treadle
+      // per warp/pick, the drawdown is determined entirely by the tie-up:
+      //   drawdown[y][x] = tieup[ shaftOf[x] ][ treadleOf[y] ]
+      //
+      // So for each (shaft i, treadle j) pair, we look at all the pixels
+      // (y,x) where shaftOf[x]=i and treadleOf[y]=j, and set tieup[i][j]
+      // by majority vote — 1 if more than half of those pixels are dark.
+      // This is the closest binary tie-up to the original image given the
+      // threading and treadling assignments.
+      const tieup = Array.from({length: Z}, () => new Array(Z).fill(0));
+      for (let i = 0; i < Z; i++) {
+        const warpsOnShaft = [];
+        for (let x = 0; x < X; x++) if (shaftOf[x] === i) warpsOnShaft.push(x);
+        if (warpsOnShaft.length === 0) continue;
+        for (let j = 0; j < Z; j++) {
+          const picksOnTreadle = [];
+          for (let y = 0; y < Y; y++) if (treadleOf[y] === j) picksOnTreadle.push(y);
+          if (picksOnTreadle.length === 0) continue;
+          // Majority vote over the block of pixels (shaft i, treadle j)
+          let dark = 0, total = 0;
+          for (const y of picksOnTreadle)
+            for (const x of warpsOnShaft) {
+              dark += currentMatrix[y][x];
+              total++;
+            }
+          tieup[i][j] = (dark / total >= 0.5) ? 1 : 0;
+        }
+      }                                                                     // Z×Z ✓
+
+      // ── Drawdown: Y×X ────────────────────────────────────────────────────
+      // drawdown[y][x] = 1 if any shaft i is tied to a pressed treadle j:
+      //   treadling[y][j]=1 AND tieup[i][j]=1 AND threading[i][x]=1
+      const drawdown = Array.from({length: Y}, (_, y) =>
+        Array.from({length: X}, (_, x) => {
+          for (let i = 0; i < Z; i++) {
+            if (!threadingBin[i][x]) continue;
+            for (let j = 0; j < Z; j++) {
+              if (tieup[i][j] && treadlingBin[y][j]) return 1;
+            }
+          }
+          return 0;
+        })
+      );                                                                    // Y×X ✓
+
+      // ── Store for WIF export ──────────────────────────────────────────────
+      window._lastDraft = { threadingBin, tieup, treadlingBin, drawdown, k: Z, X, Y };
+
+      // ── Render ────────────────────────────────────────────────────────────
+      // threadingBin is Z×X: display as-is (rows=shafts, cols=warps)
+      renderGrid(document.getElementById('threadingGrid'), threadingBin, 'threading-cell');
+      // tieup is Z×Z
+      renderGrid(document.getElementById('tieupGrid'), tieup, 'tieup-cell');
+      // treadlingBin is Y×Z: display as-is (rows=picks, cols=treadles)
+      renderGrid(document.getElementById('treadlingGrid'), treadlingBin, 'treadling-cell');
+      // drawdown is Y×X
+      renderGrid(document.getElementById('drawdownGrid'), drawdown, 'drawdown-cell');
+
+      const padNote = kUse < Z
+        ? ` (image rank = ${kUse}; shafts ${kUse+1}–${Z} are zero-padded)` : '';
+      const assignNote = useHungarian
+        ? (X <= kUse && Y <= kUse
+            ? ' Optimal assignment used.'
+            : ` Optimal assignment requested but rank too low (rank=${kUse} < Z=${Z}); argmax used instead.`)
+        : ' Argmax assignment used.';
+      status.textContent =
+        `SVD complete. Z = ${Z}${padNote}.${assignNote} ` +
+        `Threading: ${Z}×${X},  tie-up: ${Z}×${Z},  ` +
+        `treadling: ${Y}×${Z},  drawdown: ${Y}×${X}.`;
+
+      document.getElementById('draftSection').classList.remove('hidden');
+      document.getElementById('wifBtn').disabled = false;
+      document.getElementById('notesBtn').disabled = false;
+      initColours(X, Y);
+      document.getElementById('draftSection').scrollIntoView({behavior:'smooth', block:'start'});
+    } catch (err) {
+      status.innerHTML = `<span class="error">Error: ${err.message}</span>`;
+      console.error(err);
+    }
+    document.getElementById('computeBtn').disabled = false;
+  }, 30);
+}
+
+// ── Colour schemes (matching ornament page) ───────────────────────────────
+
+const PALETTE=[
+  '#000000','#1C1C1C','#3D3D3D','#777777','#BBBBBB','#FFFFFF','#F5F0E8','#D4B896',
+  '#7B3F00','#B04C04','#C4722A','#E09050','#F5D06A','#FFFF00','#FFEE44','#FFD700',
+  '#FF9900','#FF6600','#FF3300','#CC0000','#8B1A1A','#CC3399','#9828FF','#6633CC',
+  '#1A3A5C','#0033AA','#0066CC','#0099FF','#00CCFF','#00FFFF','#00BBAA','#4A7B6F',
+  '#2D4A3E','#1A5C2A','#228833','#66BB44','#AADD66','#CCFF88','#905700','#6B3A2A',
+];
+
+let warpColors = [];
+let weftColors = [];
+let activeWarpScheme = -1;
+let activeWeftScheme = -1;
+let openPalette = null;
+
+// Dynamic scheme arrays — populated in initColours based on X/Y
+let WARP_SCHEMES = [];
+let WEFT_SCHEMES = [];
+
+function isLight(hex){
+  const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  return(.299*r+.587*g+.114*b)>128;
+}
+
+// ── Palette popup ──────────────────────────────────────────────────────────
+function closePalette(){
+  if(openPalette){openPalette.classList.remove('open');openPalette=null}
+}
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.thread-swatch'))closePalette();
+});
+
+function makePalette(currentColor, onSelect){
+  const pop=document.createElement('div');
+  pop.className='swatch-palette';
+  const grid=document.createElement('div');
+  grid.className='palette-grid';
+  PALETTE.forEach(hex=>{
+    const s=document.createElement('div');
+    s.className='pal-swatch';
+    s.style.background=hex;
+    s.title=hex;
+    if(hex.toLowerCase()===currentColor.toLowerCase()){
+      s.style.outline='2px solid var(--accent)';
+      s.style.outlineOffset='1px';
+    }
+    s.addEventListener('click',e=>{e.stopPropagation();onSelect(hex);closePalette()});
+    grid.appendChild(s);
+  });
+  pop.appendChild(grid);
+  const custom=document.createElement('div');
+  custom.className='palette-custom';
+  const lbl=document.createElement('label');lbl.textContent='Custom:';
+  const inp=document.createElement('input');
+  inp.type='color';inp.value=currentColor;
+  inp.addEventListener('input',e=>{onSelect(e.target.value)});
+  inp.addEventListener('change',e=>{onSelect(e.target.value);closePalette()});
+  custom.appendChild(lbl);custom.appendChild(inp);
+  pop.appendChild(custom);
+  return pop;
+}
+
+function makeThreadSwatch(hex, onSelect){
+  const swatch=document.createElement('div');
+  swatch.className='thread-swatch';
+  swatch.style.background=hex;
+  const pop=makePalette(hex, color=>{
+    swatch.style.background=color;
+    onSelect(color);
+  });
+  swatch.appendChild(pop);
+  swatch.addEventListener('click',e=>{
+    e.stopPropagation();
+    if(openPalette&&openPalette!==pop){closePalette()}
+    pop.classList.toggle('open');
+    openPalette=pop.classList.contains('open')?pop:null;
+  });
+  return swatch;
+}
+
+// ── Build lists ────────────────────────────────────────────────────────────
+function buildWarpList(){
+  const list=document.getElementById('warpThreadList');
+  list.innerHTML='';
+  warpColors.forEach((c,i)=>{
+    const wrap=document.createElement('div');
+    wrap.className='thread-row';
+    const swatch=makeThreadSwatch(c, color=>{
+      warpColors[i]=color;
+      activeWarpScheme=-1;
+      refreshWarpSchemeButtons();
+      drawColouredCanvas();
+    });
+    swatch.setAttribute('data-tip',`Warp ${i+1}`);
+    wrap.appendChild(swatch);
+    list.appendChild(wrap);
+  });
+}
+
+function buildWeftList(){
+  const list=document.getElementById('weftThreadList');
+  list.innerHTML='';
+  weftColors.forEach((c,i)=>{
+    const wrap=document.createElement('div');
+    wrap.className='thread-row';
+    const swatch=makeThreadSwatch(c, color=>{
+      weftColors[i]=color;
+      activeWeftScheme=-1;
+      refreshWeftSchemeButtons();
+      drawColouredCanvas();
+    });
+    swatch.setAttribute('data-tip',`Pick ${i+1}`);
+    wrap.appendChild(swatch);
+    list.appendChild(wrap);
+  });
+}
+
+// ── Scheme buttons ─────────────────────────────────────────────────────────
+function buildSchemeButtons(){
+  const wg=document.getElementById('warpSchemeGrid');
+  wg.innerHTML='';
+  WARP_SCHEMES.forEach((sc,i)=>{
+    const btn=document.createElement('button');
+    btn.className='scheme-btn'+(activeWarpScheme===i?' active':'');
+    btn.id=`warpScheme${i}`;
+    const d1=document.createElement('div');d1.className='scheme-dot';d1.style.background=sc.colors[0];
+    const d2=document.createElement('div');d2.className='scheme-dot';d2.style.background=sc.colors[Math.min(3,sc.colors.length-1)];
+    const txt=document.createElement('span');txt.textContent=sc.name;
+    btn.append(d1,d2,txt);
+    btn.addEventListener('click',()=>{
+      warpColors=[...sc.colors];
+      activeWarpScheme=i;
+      refreshWarpSchemeButtons();
+      buildWarpList();
+      drawColouredCanvas();
+    });
+    wg.appendChild(btn);
+  });
+
+  const wftg=document.getElementById('weftSchemeGrid');
+  wftg.innerHTML='';
+  WEFT_SCHEMES.forEach((sc,i)=>{
+    const btn=document.createElement('button');
+    btn.className='scheme-btn'+(activeWeftScheme===i?' active':'');
+    btn.id=`weftScheme${i}`;
+    const d1=document.createElement('div');d1.className='scheme-dot';d1.style.background=sc.colors[0];
+    const d2=document.createElement('div');d2.className='scheme-dot';d2.style.background=sc.colors[Math.min(3,sc.colors.length-1)];
+    const txt=document.createElement('span');txt.textContent=sc.name;
+    btn.append(d1,d2,txt);
+    btn.addEventListener('click',()=>{
+      weftColors=[...sc.colors];
+      activeWeftScheme=i;
+      refreshWeftSchemeButtons();
+      buildWeftList();
+      drawColouredCanvas();
+    });
+    wftg.appendChild(btn);
+  });
+}
+
+function refreshWarpSchemeButtons(){
+  WARP_SCHEMES.forEach((_,i)=>{
+    const btn=document.getElementById(`warpScheme${i}`);
+    if(btn)btn.className='scheme-btn'+(activeWarpScheme===i?' active':'');
+  });
+}
+function refreshWeftSchemeButtons(){
+  WEFT_SCHEMES.forEach((_,i)=>{
+    const btn=document.getElementById(`weftScheme${i}`);
+    if(btn)btn.className='scheme-btn'+(activeWeftScheme===i?' active':'');
+  });
+}
+
+// ── Custom scheme builder ──────────────────────────────────────────────────
+const WARP_PATTERNS=[
+  {name:'All A',          fn:(i,n,a,b,c)=>a},
+  {name:'Alternate A/B',  fn:(i,n,a,b,c)=>i%2===0?a:b},
+  {name:'A/B stripe 4',   fn:(i,n,a,b,c)=>Math.floor(i/4)%2===0?a:b},
+  {name:'A/B/C stripe 3', fn:(i,n,a,b,c)=>[a,b,c][i%3]},
+  {name:'A/B/C stripe 6', fn:(i,n,a,b,c)=>[a,b,c][Math.floor(i/6)%3]},
+  {name:'Gradient A→B→C', fn:(i,n,a,b,c)=>i<n/3?a:i<2*n/3?b:c},
+];
+const WEFT_PATTERNS=[
+  {name:'All A',          fn:(i,n,a,b,c)=>a},
+  {name:'Alternate A/B',  fn:(i,n,a,b,c)=>i%2===0?a:b},
+  {name:'A/B stripe 4',   fn:(i,n,a,b,c)=>Math.floor(i/4)%2===0?a:b},
+  {name:'A/B/C stripe 3', fn:(i,n,a,b,c)=>[a,b,c][i%3]},
+  {name:'A top B bottom', fn:(i,n,a,b,c)=>i<n/2?a:b},
+  {name:'Gradient A→B→C', fn:(i,n,a,b,c)=>i<n/3?a:i<2*n/3?b:c},
+];
+
+let activeWarpPattern=1, activeWeftPattern=1;
+
+function previewColors(canvas,count,patterns,activeIdx,colorIds){
+  const ctx=canvas.getContext('2d');
+  const a=document.getElementById(colorIds[0]).value;
+  const b=document.getElementById(colorIds[1]).value;
+  const c=document.getElementById(colorIds[2]).value;
+  const fn=patterns[activeIdx].fn;
+  const w=Math.max(1,Math.floor(canvas.width/count));
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  for(let i=0;i<count;i++){ctx.fillStyle=fn(i,count,a,b,c);ctx.fillRect(i*w,0,w,canvas.height);}
+}
+
+function buildCustomPatternBtns(containerId,patterns,getActive,setActive,previewFn){
+  const row=document.getElementById(containerId);
+  row.innerHTML='';
+  patterns.forEach((p,i)=>{
+    const btn=document.createElement('button');
+    btn.className='pattern-btn'+(getActive()===i?' active':'');
+    btn.textContent=p.name;
+    btn.addEventListener('click',()=>{
+      setActive(i);
+      row.querySelectorAll('.pattern-btn').forEach((b,j)=>b.className='pattern-btn'+(j===i?' active':''));
+      previewFn();
+    });
+    row.appendChild(btn);
+  });
+}
+
+function applyCustomWarpScheme(n){
+  const a=document.getElementById('customWarpA').value;
+  const b=document.getElementById('customWarpB').value;
+  const c=document.getElementById('customWarpC').value;
+  const fn=WARP_PATTERNS[activeWarpPattern].fn;
+  return Array.from({length:n},(_,i)=>fn(i,n,a,b,c));
+}
+function applyCustomWeftScheme(n){
+  const a=document.getElementById('customWeftA').value;
+  const b=document.getElementById('customWeftB').value;
+  const c=document.getElementById('customWeftC').value;
+  const fn=WEFT_PATTERNS[activeWeftPattern].fn;
+  return Array.from({length:n},(_,i)=>fn(i,n,a,b,c));
+}
+
+function updateWarpPreview(){
+  const d=window._lastDraft;
+  previewColors(document.getElementById('customWarpPreview'),d?d.X:24,WARP_PATTERNS,activeWarpPattern,['customWarpA','customWarpB','customWarpC']);
+}
+function updateWeftPreview(){
+  const d=window._lastDraft;
+  previewColors(document.getElementById('customWeftPreview'),d?d.Y:20,WEFT_PATTERNS,activeWeftPattern,['customWeftA','customWeftB','customWeftC']);
+}
+
+// setupCustomBuilders runs once at page load — wires pattern buttons and save buttons.
+// Colour input listeners are set via oninput in HTML to avoid duplication.
+function setupCustomBuilders(){
+  buildCustomPatternBtns('customWarpPatterns',WARP_PATTERNS,()=>activeWarpPattern,v=>{activeWarpPattern=v},updateWarpPreview);
+  buildCustomPatternBtns('customWeftPatterns',WEFT_PATTERNS,()=>activeWeftPattern,v=>{activeWeftPattern=v},updateWeftPreview);
+
+  document.getElementById('saveCustomWarp').onclick = function(){
+    const d=window._lastDraft; if(!d){alert('Compute a draft first.');return;}
+    const name=document.getElementById('customWarpName').value.trim()||'Custom warp';
+    const colors=applyCustomWarpScheme(d.X);
+    WARP_SCHEMES.push({name,colors});
+    activeWarpScheme=WARP_SCHEMES.length-1;
+    warpColors=[...colors];
+    buildSchemeButtons();
+    buildWarpList();
+    drawColouredCanvas();
+    document.getElementById('customWarpName').value='';
+  };
+
+  document.getElementById('saveCustomWeft').onclick = function(){
+    const d=window._lastDraft; if(!d){alert('Compute a draft first.');return;}
+    const name=document.getElementById('customWeftName').value.trim()||'Custom weft';
+    const colors=applyCustomWeftScheme(d.Y);
+    WEFT_SCHEMES.push({name,colors});
+    activeWeftScheme=WEFT_SCHEMES.length-1;
+    weftColors=[...colors];
+    buildSchemeButtons();
+    buildWeftList();
+    drawColouredCanvas();
+    document.getElementById('customWeftName').value='';
+  };
+}
+setupCustomBuilders();
+
+// ── Coloured canvas ────────────────────────────────────────────────────────
+function drawColouredCanvas(){
+  const d=window._lastDraft; if(!d)return;
+  const {drawdown,X,Y}=d;
+  const canvas=document.getElementById('colouredDrawdown');
+  const cell=Math.max(2,Math.min(16,Math.floor(720/Math.max(X,Y))));
+  canvas.width=X*cell;
+  canvas.height=Y*cell;
+  const ctx=canvas.getContext('2d');
+  for(let y=0;y<Y;y++){
+    for(let x=0;x<X;x++){
+      ctx.fillStyle=drawdown[y][x]?(warpColors[x]||'#1a1a1a'):(weftColors[y]||'#ffffff');
+      ctx.fillRect(x*cell,y*cell,cell,cell);
+    }
+  }
+  // Grid lines
+  ctx.strokeStyle='rgba(0,0,0,0.15)';ctx.lineWidth=0.5;
+  for(let x=0;x<=X;x++){ctx.beginPath();ctx.moveTo(x*cell,0);ctx.lineTo(x*cell,Y*cell);ctx.stroke();}
+  for(let y=0;y<=Y;y++){ctx.beginPath();ctx.moveTo(0,y*cell);ctx.lineTo(X*cell,y*cell);ctx.stroke();}
+  // Warp colour strip at bottom
+  for(let x=0;x<X;x++){ctx.fillStyle=warpColors[x]||'#1a1a1a';ctx.fillRect(x*cell,Y*cell+2,cell-1,6);}
+  document.getElementById('drawdownNote').textContent=`${X} warps × ${Y} picks. Colour strip = warp colours.`;
+}
+
+// ── Init colours (called after draft is computed) ──────────────────────────
+function initColours(X,Y){
+  // Build dynamic schemes based on actual image dimensions
+  WARP_SCHEMES=[
+    {name:'Black / white',    colors:Array.from({length:X},(_,i)=>i%2===0?'#1a1a1a':'#ffffff')},
+    {name:'Black / cyan',     colors:Array.from({length:X},(_,i)=>i%2===0?'#1a1a1a':'#00CCFF')},
+    {name:'Rust / amber',     colors:Array.from({length:X},(_,i)=>i%2===0?'#B04C04':'#905700')},
+    {name:'Navy / cream',     colors:Array.from({length:X},(_,i)=>i%2===0?'#1A3A5C':'#F5F0E8')},
+    {name:'Forest / gold',    colors:Array.from({length:X},(_,i)=>i%2===0?'#2D4A3E':'#F5D06A')},
+    {name:'All black',        colors:Array(X).fill('#1a1a1a')},
+  ];
+  WEFT_SCHEMES=[
+    {name:'All terracotta',   colors:Array(Y).fill('#C4722A')},
+    {name:'All white',        colors:Array(Y).fill('#ffffff')},
+    {name:'Rust / amber',     colors:Array.from({length:Y},(_,i)=>i%2===0?'#B04C04':'#905700')},
+    {name:'Navy / cream',     colors:Array.from({length:Y},(_,i)=>i%2===0?'#1A3A5C':'#F5F0E8')},
+    {name:'Blues / purples',  colors:Array.from({length:Y},(_,i)=>['#1A3A5C','#6633CC','#0066CC'][i%3])},
+    {name:'Rainbow',          colors:Array.from({length:Y},(_,i)=>['#FF0000','#FF9900','#FFFF00','#00BB44','#0066CC','#6633CC'][i%6])},
+  ];
+  activeWarpScheme=0; activeWeftScheme=0;
+  warpColors=[...WARP_SCHEMES[0].colors];
+  weftColors=[...WEFT_SCHEMES[0].colors];
+  buildSchemeButtons();
+  buildWarpList();
+  buildWeftList();
+  drawColouredCanvas();
+}
+
+// ── Notes tabs ────────────────────────────────────────────────────────────
+document.querySelectorAll('.svd-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.svd-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.svd-tab-panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById(tab.dataset.tab).classList.add('active');
+  });
+});
+
+// ── Notes export ───────────────────────────────────────────────────────────
+function exportNotes() {
+  const d = window._lastDraft;
+  const now = new Date().toLocaleString();
+  const questions = [
+    'Q1. Describe the original image — what kind of pattern or structure does it show?',
+    'Q2. With Z smaller than the image dimensions, how does the drawdown compare to the original? What information is lost?',
+    'Q3. What happens to the threading when Z increases? Do the shaft patterns become more complex?',
+    'Q4. Compare the argmax and Hungarian algorithm results at the same Z — how different is the drawdown?',
+    'Q5. How does the tie-up change when Z is small vs. large? What does its structure tell you about the image?',
+    'Q6. Describe your colour scheme choices and why they work for your image.',
+  ];
+  const areas = document.querySelectorAll('#tab-obs textarea');
+  const freeNotes = document.querySelector('#tab-free textarea');
+
+  let text = 'SVD WEAVING DRAFT EXPLORER\n';
+  text += 'Observation Notes\n';
+  text += `Saved: ${now}\n`;
+  text += '='.repeat(52) + '\n\n';
+
+  if (d) {
+    text += `IMAGE DIMENSIONS: ${d.X} warps × ${d.Y} picks\n`;
+    text += `SHAFTS / TREADLES (Z): ${d.k}\n\n`;
+
+    // Warp colours
+    text += `WARP COLOURS\n${'─'.repeat(40)}\n`;
+    warpColors.forEach((c, i) => { text += `Thread ${i+1}: ${c}\n`; });
+    text += '\n';
+
+    // Weft colours
+    text += `WEFT COLOURS\n${'─'.repeat(40)}\n`;
+    weftColors.forEach((c, i) => { text += `Pick ${i+1}: ${c}\n`; });
+    text += '\n';
+
+    // Tie-up as ASCII grid
+    text += `TIE-UP\n${'─'.repeat(40)}\n`;
+    text += '      ' + Array.from({length: d.k}, (_, j) => `T${j+1}`.padEnd(3)).join('') + '\n';
+    d.tieup.forEach((row, i) => {
+      text += `Sh${i+1}`.padEnd(6) + row.map(v => v ? '■  ' : '□  ').join('') + '\n';
+    });
+    text += '\n';
+  }
+
+  text += `OBSERVATION QUESTIONS\n${'─'.repeat(40)}\n\n`;
+  questions.forEach((q, i) => {
+    const val = areas[i] ? areas[i].value.trim() : '';
+    text += `${q}\n${val || '(no answer entered)'}\n\n`;
+  });
+
+  text += `MY NOTES\n${'─'.repeat(40)}\n`;
+  text += (freeNotes && freeNotes.value.trim()) || '(no notes entered)';
+  text += '\n';
+
+  const blob = new Blob([text], {type: 'text/plain'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `svd-draft-notes-${Date.now()}.txt`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+}
+
+// ── WIF Export ────────────────────────────────────────────────────────────
+function exportWIF() {
+  const d = window._lastDraft;
+  if (!d) return;
+  const { threadingBin, tieup, treadlingBin, k, X, Y } = d;
+
+  const lines = [];
+
+  // [WIF]
+  lines.push('[WIF]');
+  lines.push('Version=1.1');
+  lines.push('Date=' + new Date().toISOString().slice(0,10));
+  lines.push('Developers=claude.ai SVD Weaving Draft Explorer');
+  lines.push('Source Program=SVD Draft Explorer');
+  lines.push('Source Version=1.0');
+  lines.push('');
+
+  // [CONTENTS]
+  lines.push('[CONTENTS]');
+  lines.push('Color Palette=yes');
+  lines.push('Warp=yes');
+  lines.push('Weft=yes');
+  lines.push('Threading=yes');
+  lines.push('Tieup=yes');
+  lines.push('Treadling=yes');
+  lines.push('Color Table=yes');
+  lines.push('Warp Colors=yes');
+  lines.push('Weft Colors=yes');
+  lines.push('');
+
+  // [WEAVING] — must declare Shafts and Treadles explicitly
+  lines.push('[WEAVING]');
+  lines.push('Shafts=' + k);
+  lines.push('Treadles=' + k);
+  lines.push('Rising Shed=yes');
+  lines.push('');
+
+  // Build a deduplicated colour table from all warp + weft colours.
+  // colorIndex maps hex (lowercase) → 1-based WIF colour index.
+  function hexToRGB(hex) {
+    const h = hex.replace('#','');
+    return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
+  }
+  const colorIndex = {};
+  let colorCount = 0;
+  const allColors = [...(warpColors.length ? warpColors : Array(X).fill('#1a1a1a')),
+                    ...(weftColors.length ? weftColors : Array(Y).fill('#ffffff'))];
+  allColors.forEach(hex => {
+    const key = hex.toLowerCase();
+    if (!(key in colorIndex)) colorIndex[key] = ++colorCount;
+  });
+
+  // [COLOR PALETTE]
+  lines.push('[COLOR PALETTE]');
+  lines.push('Entries=' + colorCount);
+  lines.push('Form=RGB');
+  lines.push('Range=0,255');
+  lines.push('');
+
+  // [COLOR TABLE]
+  lines.push('[COLOR TABLE]');
+  Object.entries(colorIndex).forEach(([hex, idx]) => {
+    const [r,g,b] = hexToRGB(hex);
+    lines.push(`${idx}=${r},${g},${b}`);
+  });
+  lines.push('');
+
+  // Helper: get WIF colour index for a hex, with fallback
+  function wifColor(hex) {
+    return colorIndex[(hex||'#000000').toLowerCase()] || 1;
+  }
+
+  // [WARP]
+  lines.push('[WARP]');
+  lines.push('Threads=' + X);
+  lines.push('Units=Decipoints');
+  lines.push('Sett=100');
+  lines.push('');
+
+  // [WEFT]
+  lines.push('[WEFT]');
+  lines.push('Threads=' + Y);
+  lines.push('Units=Decipoints');
+  lines.push('Sett=100');
+  lines.push('');
+
+  // [THREADING]
+  // WIF thread 1 = rightmost warp in our display (col X-1), thread X = leftmost (col 0)
+  //   → WIF thread t (1-based) = our col (X - t)
+  // WIF shaft 1 = bottom shaft in our display (row k-1), shaft k = top (row 0)
+  //   → WIF shaft s (1-based) = our row (k - s)
+  lines.push('[THREADING]');
+  for (let t = 1; t <= X; t++) {
+    const x = X - t;                    // our warp column
+    const shafts = [];
+    for (let i = 0; i < k; i++) {
+      if (threadingBin[i][x]) shafts.push(k - i);   // flip shaft: our row i → WIF shaft k-i
+    }
+    lines.push(t + '=' + (shafts.length > 0 ? shafts.join(',') : '1'));
+  }
+  lines.push('');
+
+  // [TIEUP]
+  // WIF: shaft (1-based) = treadle list (1-based)
+  // Our tieup[i][j] = shaft row i (top=0), treadle col j (left=0).
+  // WIF shaft s=1 is the BOTTOM shaft → our row i = k - s.
+  // WIF treadle t=1 is the LEFTMOST treadle → our col j = t - 1.
+  // Additionally the tie-up must be TRANSPOSED relative to our storage
+  // (rows become cols and vice versa) to match Fiberworks convention,
+  // meaning we write tieup[j][i] when outputting shaft s, treadle t.
+  lines.push('[TIEUP]');
+  for (let s = 1; s <= k; s++) {
+    const treadles = [];
+    for (let t = 1; t <= k; t++) {
+      // transpose (swap shaft/treadle roles) then flip both axes:
+      // our tieup[i][j] where i = treadle col flipped, j = shaft row flipped
+      const i = k - t;   // treadle axis, top-bottom flip (unchanged)
+      const j = s - 1;   // shaft axis, left-right flip added
+      if (tieup[i][j]) treadles.push(t);
+    }
+    if (treadles.length > 0) lines.push(s + '=' + treadles.join(','));
+  }
+  lines.push('');
+
+  // [TREADLING]
+  // WIF pick 1 = top pick in our display (row 0) — no vertical flip.
+  // Our interface shows picks top-to-bottom = WIF pick 1..Y top-to-bottom.
+  // WIF treadle t=1 = our col 0 (leftmost) — no flip.
+  lines.push('[TREADLING]');
+  for (let p = 1; p <= Y; p++) {
+    const y = p - 1;                    // our pick row (no flip)
+    const treadles = [];
+    for (let j = 0; j < k; j++) {
+      if (treadlingBin[y][j]) treadles.push(j + 1);
+    }
+    lines.push(p + '=' + (treadles.length > 0 ? treadles.join(',') : '1'));
+  }
+  lines.push('');
+
+  // [WARP COLORS]
+  // WIF thread t (1-based) = our warp col (X - t) due to left-right flip
+  lines.push('[WARP COLORS]');
+  for (let t = 1; t <= X; t++) {
+    const x = X - t;  // our warp column (same flip as threading)
+    lines.push(t + '=' + wifColor(warpColors[x]));
+  }
+  lines.push('');
+
+  // [WEFT COLORS]
+  // WIF pick p (1-based) = our row (p - 1), no flip
+  lines.push('[WEFT COLORS]');
+  for (let p = 1; p <= Y; p++) {
+    lines.push(p + '=' + wifColor(weftColors[p - 1]));
+  }
+  lines.push('');
+
+  const text = lines.join('\r\n');
+  const blob = new Blob([text], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'svd_draft.wif';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>
