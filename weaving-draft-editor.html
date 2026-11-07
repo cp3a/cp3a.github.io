@@ -1,0 +1,1094 @@
+---
+layout: default
+title: Weaving Draft Editor
+permalink: /weaving-draft-editor/
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Weaving Draft Editor</title>
+<style>
+  :root {
+    --bg:#1a1917;--surface:#242320;--border:#3a3835;--border-strong:#52504c;
+    --text:#f0ede8;--text2:#9a9790;
+    --accent:#6aacdf;--accent-bg:#1e2f40;--accent-border:#2a5f8f;
+    --warp:#2a5f8f;--weft:#8f2a2a;--tie:#2a7a3b;
+    --cell:16px;--r:6px;
+    color-scheme:dark;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Georgia',serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column;height:100vh;overflow:hidden}
+  button{font-family:inherit;font-size:.82rem;padding:.35rem .8rem;background:var(--surface);color:var(--text);border:1px solid var(--border-strong);border-radius:var(--r);cursor:pointer}
+  button:hover{background:var(--accent-bg);border-color:var(--accent)}
+  button.active{background:var(--accent-bg);border-color:var(--accent);color:var(--accent)}
+  button:disabled{opacity:.4;cursor:default}
+  input[type=number]{font-family:inherit;font-size:.82rem;padding:.28rem .45rem;background:var(--surface);color:var(--text);border:1px solid var(--border-strong);border-radius:var(--r);width:65px}
+  label{font-size:.8rem;color:var(--text2)}
+  #toolbar{display:flex;align-items:center;gap:8px;padding:7px 12px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap}
+  #toolbar .sep{width:1px;height:20px;background:var(--border-strong);flex-shrink:0}
+  #main{display:flex;flex:1;overflow:hidden}
+  #sidebar{width:255px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:14px}
+  #canvas-area{flex:1;overflow:auto;padding:18px}
+  #statusbar{font-size:.75rem;color:var(--text2);padding:4px 12px;background:var(--surface);border-top:1px solid var(--border);flex-shrink:0}
+  .upload-zone{border:1.5px dashed var(--border-strong);border-radius:8px;padding:16px;text-align:center;cursor:pointer;font-size:.82rem;color:var(--text2);transition:.15s}
+  .upload-zone:hover,.upload-zone.drag{background:var(--accent-bg);border-color:var(--accent);color:var(--text)}
+  .sbox{display:flex;flex-direction:column;gap:7px}
+  .sbox h2{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--text2);padding-bottom:4px;border-bottom:1px solid var(--border)}
+  .frow{display:flex;gap:7px}.frow .f{flex:1;display:flex;flex-direction:column;gap:3px}
+  .chips{display:flex;gap:5px;flex-wrap:wrap}
+  .chip{background:var(--accent-bg);border:1px solid var(--accent-border);border-radius:var(--r);padding:2px 7px;font-size:.75rem}
+  .chip span{color:var(--text2);margin-right:2px}
+  .stoggle{display:flex;gap:5px}
+  .stoggle button{flex:1;font-size:.76rem;padding:.28rem .4rem}
+  .selinfo{font-size:.76rem;padding:4px 7px;background:var(--accent-bg);border:1px solid var(--accent-border);border-radius:var(--r);color:var(--accent)}
+  .mrow{display:flex;gap:5px;align-items:flex-end}
+  .mrow .f{flex:1;display:flex;flex-direction:column;gap:3px}
+  .result{font-size:.76rem;padding:4px 7px;border-radius:var(--r);display:none}
+  .result.ok{background:rgba(42,122,59,.2);border:1px solid #2a7a3b;color:#6bcf7f}
+  .result.err{background:rgba(192,80,80,.15);border:1px solid #c05050;color:#e08080}
+  .draft-wrap{display:flex;gap:8px;align-items:flex-start}
+  .draft-col{display:flex;flex-direction:column;gap:6px}
+  .glabel{font-size:.7rem;color:var(--text2);font-style:italic;margin-bottom:2px}
+  .threading-grid,.tieup-grid,.treadling-grid,.drawdown-grid{display:grid;gap:1px;background:var(--border);border:1px solid var(--border-strong);width:fit-content}
+  .threading-cell{width:var(--cell);height:var(--cell);background:var(--surface);cursor:pointer}
+  .threading-cell.on{background:var(--warp)}
+  .tieup-cell{width:var(--cell);height:var(--cell);background:var(--surface);cursor:pointer}
+  .tieup-cell.on{background:var(--tie)}
+  .treadling-cell{width:var(--cell);height:var(--cell);background:var(--surface);cursor:pointer}
+  .treadling-cell.on{background:var(--weft)}
+  .drawdown-cell{width:var(--cell);height:var(--cell);background:var(--surface)}
+  .drawdown-cell.on{background:#cccccc}
+  .drawdown-cell.unthreaded{background:#555}
+  .dd-header-cell{background:#1e2f40;cursor:pointer;border:1px solid var(--border)}
+  .dd-header-cell:hover{background:#2a4a60}
+  .dd-wrap{display:flex;flex-direction:column;gap:1px;width:fit-content}
+  .dd-top-row{display:flex;gap:1px;margin-left:calc(10px + 1px)}
+  .dd-mid{display:flex;gap:1px}
+  .dd-left-col{display:flex;flex-direction:column;gap:1px}
+  #welcome{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:10px;color:var(--text2)}
+  #draft-view{display:none}
+  #tooltip{position:fixed;background:rgba(0,0,0,.88);border:1px solid var(--border-strong);color:var(--text);font-size:.72rem;font-family:Arial,sans-serif;padding:3px 7px;border-radius:4px;pointer-events:none;display:none;z-index:999}
+</style>
+</head>
+<body>
+<div id="toolbar">
+  <strong style="font-size:.88rem">Weaving Draft Editor</strong>
+  <div class="sep"></div>
+  <button id="btn-open">📂 Open WIF</button>
+  <input type="file" id="file-input" accept=".wif" style="display:none">
+  <input type="text" id="export-name" placeholder="filename" style="width:140px;font-size:.82rem;padding:.28rem .45rem;background:var(--surface);color:var(--text);border:1px solid var(--border-strong);border-radius:var(--r)" disabled>
+  <button id="btn-export" disabled>💾 Export WIF</button>
+  <div class="sep"></div>
+  <button id="btn-undo" disabled>↩ Undo</button>
+  <div class="sep"></div>
+  <button id="btn-save-bmp" disabled>🖼 Save BMP</button>
+  <div class="sep"></div>
+  <label style="display:flex;align-items:center;gap:5px">Cell <input type="number" id="cell-size" value="16" min="8" max="32" style="width:50px"> px</label>
+</div>
+<div id="main">
+<div id="sidebar">
+  <div class="sbox">
+    <h2>File</h2>
+    <div class="upload-zone" id="upload-zone">Drop WIF here or click to browse</div>
+  </div>
+  <div class="sbox">
+    <h2>New draft</h2>
+    <div class="frow">
+      <div class="f"><label>Shafts</label><input type="number" id="new-shafts" value="4" min="2" max="64"></div>
+      <div class="f"><label>Treadles</label><input type="number" id="new-treadles" value="4" min="2" max="64"></div>
+    </div>
+    <div class="frow">
+      <div class="f"><label>Ends</label><input type="number" id="new-ends" value="24" min="1" max="400"></div>
+      <div class="f"><label>Picks</label><input type="number" id="new-picks" value="24" min="1" max="400"></div>
+    </div>
+    <button id="btn-new">Create blank draft</button>
+  </div>
+  <div class="sbox" id="info-box" style="display:none">
+    <h2>Draft info</h2>
+    <div class="chips">
+      <div class="chip"><span>Shafts</span><strong id="i-shafts">-</strong></div>
+      <div class="chip"><span>Treadles</span><strong id="i-treadles">-</strong></div>
+      <div class="chip"><span>Ends</span><strong id="i-ends">-</strong></div>
+      <div class="chip"><span>Picks</span><strong id="i-picks">-</strong></div>
+    </div>
+  </div>
+  <div class="sbox" id="manip-box" style="display:none">
+    <h2>Selection</h2>
+    <div class="stoggle">
+      <button id="sel-warp" class="active">Warp ends</button>
+      <button id="sel-weft">Weft picks</button>
+    </div>
+    <div class="frow">
+      <div class="f"><label>From</label><input type="number" id="sel-from" value="1" min="1"></div>
+      <div class="f"><label>To</label><input type="number" id="sel-to" value="1" min="1"></div>
+    </div>
+    <button id="sel-all">Select all</button>
+    <div class="selinfo" id="sel-info" style="display:none"></div>
+    <h2 style="margin-top:2px">Manipulations</h2>
+    <button id="manip-delete" style="color:#e08080;border-color:#804040">🗑 Delete selection</button>
+    <div class="mrow">
+      <div class="f"><label>Repeat ×</label><input type="number" id="repeat-n" value="2" min="2" max="99"></div>
+      <button id="manip-repeat">Repeat</button>
+    </div>
+    <div class="mrow">
+      <div class="f"><label>Thicken ×</label><input type="number" id="thicken-n" value="2" min="2" max="20"></div>
+      <button id="manip-thicken">Thicken</button>
+    </div>
+    <div class="result" id="result"></div>
+
+    <button id="manip-flip">⇄ Flip selection</button>
+    <button id="manip-invert-treadling">⇅ Invert treadling (weft picks)</button>
+
+    <h2 style="margin-top:2px">Move selection</h2>
+    <div class="frow">
+      <div class="f"><label>To position</label><input type="number" id="move-pos" value="1" min="1"></div>
+      <div class="stoggle" style="align-self:flex-end">
+        <button id="move-before" class="active">Before</button>
+        <button id="move-after">After</button>
+      </div>
+    </div>
+    <button id="manip-move">↕ Move</button>
+    <div class="result" id="move-result"></div>
+  </div>
+
+  <div class="sbox" id="insert-box" style="display:none">
+    <h2>Insert blank</h2>
+    <div class="stoggle">
+      <button id="ins-warp" class="active">Warp ends</button>
+      <button id="ins-weft">Weft picks</button>
+    </div>
+    <div class="frow">
+      <div class="f"><label>At position</label><input type="number" id="ins-pos" value="1" min="1"></div>
+      <div class="f"><label>Count</label><input type="number" id="ins-count" value="1" min="1" max="200"></div>
+    </div>
+    <div class="stoggle">
+      <button id="ins-before" class="active">Before</button>
+      <button id="ins-after">After</button>
+    </div>
+    <button id="ins-do">Insert</button>
+    <div class="result" id="ins-result"></div>
+  </div>
+</div>
+<div id="canvas-area">
+  <div id="welcome">
+    <div style="font-size:2.5rem">🧵</div>
+    <div style="font-size:1rem;color:var(--text)">Load a WIF file or create a new draft</div>
+  </div>
+  <div id="draft-view">
+    <!-- SVD-explorer layout: threading top-left, tieup top-right,
+         drawdown bottom-left, treadling bottom-right.
+         Tieup and treadling share right column so treadle cols align. -->
+    <div class="draft-wrap">
+      <div class="draft-col">
+        <div>
+          <div class="glabel" id="lbl-threading">Threading</div>
+          <div style="display:flex;gap:1px">
+            <div style="width:10px;flex-shrink:0"></div>
+            <div id="threadingGrid" class="threading-grid"></div>
+          </div>
+        </div>
+        <div>
+          <div class="glabel" id="lbl-drawdown">Drawdown</div>
+          <div class="dd-wrap">
+            <div class="dd-top-row" id="dd-top-row"></div>
+            <div class="dd-mid">
+              <div class="dd-left-col" id="dd-left-col"></div>
+              <div id="drawdownGrid" class="drawdown-grid"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="draft-col">
+        <div>
+          <div class="glabel" id="lbl-tieup">Tie-up</div>
+          <div id="tieupGrid" class="tieup-grid"></div>
+        </div>
+        <div>
+          <div class="glabel" id="lbl-treadling">Treadling</div>
+          <div style="height:11px"></div>
+          <div id="treadlingGrid" class="treadling-grid"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+<div id="statusbar">Ready</div>
+<div id="tooltip"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════
+// INTERNAL MODEL — identical to SVD Weaving Draft Explorer
+//
+// threadingBin[i][x]  row i = shaft row (0=top), col x = warp col (0=left)
+// tieup[i][j]         row i = shaft row, col j = treadle col
+// treadlingBin[y][j]  row y = pick (0=top), col j = treadle col
+// drawdown[y][x]      row y = pick, col x = warp col
+//
+// shaftOf[x] = i  (which row in threadingBin is active for warp col x)
+//
+// WIF AXIS CONVENTIONS (from SVD explorer export comments):
+//   WIF thread t (1-based) = our warp col  x = X - t   (LEFT-RIGHT FLIP)
+//   WIF shaft  s (1-based) = our shaft row i = Z - s   (TOP-BOTTOM FLIP)
+//   WIF treadle t (1-based) = our treadle col j = t-1  (no flip)
+//   WIF pick   p (1-based) = our pick row   y = p-1    (no flip)
+//
+// WIF [TIEUP]: shaft s = treadle list  →  tieup[Z-t][s-1] = 1
+// WIF [THREADING]: thread t = shaft s  →  threadingBin[Z-s][X-t] = 1
+// WIF [TREADLING]: pick p = treadle t  →  treadlingBin[p-1][t-1] = 1
+// ═══════════════════════════════════════════════════════════════════════
+
+let draft = null;
+// draft = { title, Z (shafts), K (treadles), X (ends), Y (picks),
+//           threadingBin[Z][X], tieup[Z][K], treadlingBin[Y][K] }
+
+let history=[], selAxis='warp', selFrom=1, selTo=1;
+
+function status(s){ document.getElementById('statusbar').textContent=s; }
+function showResult(msg,ok=true){
+  const el=document.getElementById('result');
+  el.textContent=msg; el.className='result '+(ok?'ok':'err'); el.style.display='block';
+  setTimeout(()=>el.style.display='none',3000);
+}
+function pushHistory(){
+  history.push(JSON.stringify(draft));
+  if(history.length>30) history.shift();
+  document.getElementById('btn-undo').disabled=false;
+}
+function undo(){
+  if(!history.length) return;
+  draft=JSON.parse(history.pop());
+  if(!history.length) document.getElementById('btn-undo').disabled=true;
+  renderAll(); status('Undo');
+}
+
+// ── Drawdown (identical to SVD explorer's computeDrawdownFromArrays) ──
+function computeDrawdown(){
+  const {Z,K,X,Y,threadingBin,tieup,treadlingBin}=draft;
+  // shaftOf[x] = shaft row for warp col x
+  const shaftOf=new Int32Array(X);
+  for(let i=0;i<Z;i++) for(let x=0;x<X;x++) if(threadingBin[i][x]) shaftOf[x]=i;
+  return Array.from({length:Y},(_,y)=>{
+    const pressed=[];
+    for(let j=0;j<K;j++) if(treadlingBin[y][j]) pressed.push(j);
+    return Array.from({length:X},(_,x)=>{
+      for(const j of pressed) if(tieup[shaftOf[x]][j]) return 1;
+      return 0;
+    });
+  });
+}
+
+// ── WIF Parser ────────────────────────────────────────────────────────
+function parseWIF(text){
+  const secs={};
+  let cur=null;
+  for(const raw of text.split(/\r?\n/)){
+    const line=raw.trim();
+    if(!line||line.startsWith(';')) continue;
+    if(line.startsWith('[')){
+      cur=line.slice(1,line.indexOf(']')).toLowerCase().replace(/[-_]+/g,' ').trim();
+      secs[cur]=secs[cur]||{};
+    } else if(cur&&line.includes('=')){
+      const i=line.indexOf('=');
+      secs[cur][line.slice(0,i).trim()]=line.slice(i+1).trim();
+    }
+  }
+  function sec(...ns){
+    for(const n of ns){
+      if(secs[n]) return secs[n];
+      const h=n.replace(/ /g,'-');
+      if(secs[h]) return secs[h];
+    }
+    return null;
+  }
+
+  const wif=sec('wif')||{};
+  const wi=sec('weaving information')||sec('weaving')||{};
+  const threadingSec=sec('threading');
+  const treadlingSec=sec('treadling');
+  const tieupSec=sec('tieup','tie up');
+  const warpSec=sec('warp')||{};
+  const weftSec=sec('weft')||{};
+
+  function wiN(...ks){ for(const k of ks){ const v=parseInt(wi[k]); if(v>0) return v; } return 0; }
+
+  const tKeys=threadingSec?Object.keys(threadingSec).map(Number):[];
+  const rKeys=treadlingSec?Object.keys(treadlingSec).map(Number):[];
+  const uKeys=tieupSec?Object.keys(tieupSec).map(Number):[];
+
+  // X=ends, Y=picks — also check [WARP]/[WEFT] Threads
+  const X = wiN('Ends','ends') || parseInt(warpSec.Threads||warpSec.threads||0) ||
+            (tKeys.length?Math.max(...tKeys):24);
+  const Y = wiN('Picks','picks') || parseInt(weftSec.Threads||weftSec.threads||0) ||
+            (rKeys.length?Math.max(...rKeys):24);
+
+  // Parse raw sections
+  const rawThread={}, rawTread={}, rawTieup={};
+  if(threadingSec) for(const [k,v] of Object.entries(threadingSec))
+    rawThread[+k]=parseInt(v.split(',')[0]);
+  if(treadlingSec) for(const [k,v] of Object.entries(treadlingSec))
+    rawTread[+k]=parseInt(v.split(',')[0]);
+  if(tieupSec) for(const [k,v] of Object.entries(tieupSec))
+    rawTieup[+k]=v.split(',').map(x=>parseInt(x.trim())).filter(n=>n>0);
+
+  // Derive Z (shafts) and K (treadles)
+  const maxShaftThread = Object.values(rawThread).length ? Math.max(...Object.values(rawThread)) : 0;
+  const maxShaftTieup  = uKeys.length ? Math.max(...uKeys) : 0;
+  let maxTreadleTieup=0;
+  for(const ts of Object.values(rawTieup)) ts.forEach(t=>{if(t>maxTreadleTieup)maxTreadleTieup=t;});
+  const maxTreadleTread= Object.values(rawTread).length ? Math.max(...Object.values(rawTread)) : 0;
+
+  const Z = wiN('Shafts','shafts') || Math.max(maxShaftThread, maxShaftTieup, 2);
+  const K = wiN('Treadles','treadles') || Math.max(maxTreadleTread, maxTreadleTieup, 2);
+
+  // Build internal arrays using SVD explorer axis conventions:
+  //   WIF thread t → col x = X-t,  WIF shaft s → row i = Z-s
+  // Threading: WIF end t → col x=X-t (left-right flip), WIF shaft s → row i=Z-s (top-bottom flip)
+  const threadingBin=Array.from({length:Z},()=>new Array(X).fill(0));
+  for(let t=1;t<=X;t++){
+    const s=rawThread[t]||1;
+    const x=X-t;       // left-right flip: end 1 → col X-1 (rightmost)
+    const i=Z-s;       // top-bottom flip: shaft 1 → bottom row Z-1
+    if(i>=0&&i<Z&&x>=0&&x<X) threadingBin[i][x]=1;
+  }
+
+  // WIF [TIEUP]: shaft s = treadle list
+  // SVD explorer export: tieup[Z-t][s-1] = 1  (row=Z-treadle, col=shaft-1)
+  // So import inverse: WIF shaft s, treadle t → tieup[Z-t][s-1] = 1
+  const tieup=Array.from({length:Z},()=>new Array(K).fill(0));
+  for(const [sk,ts] of Object.entries(rawTieup)){
+    const s=+sk;
+    const j=s-1;  // col = shaft - 1 (no flip on shaft axis)
+    if(j<0||j>=Z) continue;
+    for(const t of ts){
+      const i=Z-t;  // row = Z - treadle (treadle axis flipped)
+      if(i>=0&&i<Z) tieup[i][j]=1;
+    }
+  }
+
+  // WIF [TREADLING]: pick p → treadlingBin[p-1][t-1] (no flips)
+  const treadlingBin=Array.from({length:Y},()=>new Array(K).fill(0));
+  for(let p=1;p<=Y;p++){
+    const t=rawTread[p]||1;
+    const j=t-1;
+    if(j>=0&&j<K) treadlingBin[p-1][j]=1;
+  }
+
+  return {
+    title: wif.Title||wif.title||sec('text')?.Title||sec('text')?.title||'Untitled',
+    Z, K, X, Y, threadingBin, tieup, treadlingBin
+  };
+}
+
+// ── WIF Exporter (identical axis logic to SVD explorer) ───────────────
+function exportWIF(){
+  if(!draft) return;
+  const {title,Z,K,X,Y,threadingBin,tieup,treadlingBin}=draft;
+  const L=[], p=s=>L.push(s);
+  p('[WIF]'); p('Version=1.1'); p('Date='+new Date().toISOString().slice(0,10));
+  p('Source Program=Weaving Draft Editor'); p('Source Version=1.0'); p('');
+  p('[CONTENTS]'); p('Color Palette=yes'); p('Warp=yes'); p('Weft=yes');
+  p('Threading=yes'); p('Tieup=yes'); p('Treadling=yes');
+  p('Color Table=yes'); p('Warp Colors=yes'); p('Weft Colors=yes'); p('');
+  p('[WEAVING]'); p('Shafts='+Z); p('Treadles='+K); p('Rising Shed=yes'); p('');
+  p('[COLOR PALETTE]'); p('Entries=2'); p('Form=RGB'); p('Range=0,255'); p('');
+  p('[COLOR TABLE]'); p('1=255,255,255'); p('2=26,26,26'); p('');
+  p('[WARP]'); p('Threads='+X); p('Units=Decipoints'); p('Sett=100'); p('');
+  p('[WEFT]'); p('Threads='+Y); p('Units=Decipoints'); p('Sett=100'); p('');
+
+  // Threading: internal col x = WIF end (X-x), internal row i = WIF shaft (Z-i)
+  // Left-right flip: col X-1 = end 1, col 0 = end X
+  p('[THREADING]');
+  for(let x=0;x<X;x++){
+    let wifShaft=1;
+    for(let i=0;i<Z;i++) if(threadingBin[i][x]){ wifShaft=Z-i; break; }
+    p((X-x)+'='+wifShaft);
+  }
+  p('');
+
+  // Tieup: WIF shaft s = treadle list
+  // Internal: tieup[Z-t][s-1] = 1, so for shaft s (col=s-1): find rows i with tieup[i][s-1]=1, treadle=Z-i
+  p('[TIEUP]');
+  for(let s=1;s<=Z;s++){
+    const j=s-1;  // col = shaft-1
+    const ts=[];
+    for(let i=0;i<Z;i++) if(tieup[i][j]) ts.push(Z-i);  // treadle = Z-i
+    ts.sort((a,b)=>a-b);
+    if(ts.length) p(s+'='+ts.join(','));
+  }
+  p('');
+
+  // Treadling: WIF pick p = our row p-1; treadle = col j → j+1
+  p('[TREADLING]');
+  for(let py=0;py<Y;py++){
+    let t=1;
+    for(let j=0;j<K;j++) if(treadlingBin[py][j]){ t=j+1; break; }
+    p((py+1)+'='+t);
+  }
+  p('');
+
+  p('[WARP COLORS]'); for(let i=1;i<=X;i++) p(i+'=1'); p('');
+  p('[WEFT COLORS]'); for(let i=1;i<=Y;i++) p(i+'=2'); p('');
+
+  const blob=new Blob([L.join('\r\n')],{type:'text/plain'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  const exportName=(document.getElementById('export-name').value.trim()||title||'draft').replace(/[^a-z0-9]/gi,'_');
+  a.href=url; a.download=exportName+'.wif';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+  status('Downloaded '+a.download);
+}
+
+// ── renderGrid (identical to SVD explorer) ────────────────────────────
+function renderGrid(el, mat, onClass, mode, onEdit){
+  el.innerHTML='';
+  if(!mat||!mat.length) return;
+  const rows=mat.length, cols=mat[0].length;
+  el.style.gridTemplateColumns=`repeat(${cols},var(--cell))`;
+  el.style.gridTemplateRows=`repeat(${rows},var(--cell))`;
+  const cells=[];
+  for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){
+    const cell=document.createElement('div');
+    cell.className=onClass+(mat[r][c]?' on':'');
+    cell.dataset.r=r; cell.dataset.c=c;
+    cells.push(cell); el.appendChild(cell);
+  }
+  if(mode==='static') return;
+  if(mode==='toggle'){
+    let pv=null;
+    el.addEventListener('mousedown',e=>{
+      const cell=e.target.closest('[data-r]'); if(!cell) return;
+      e.preventDefault();
+      const r=+cell.dataset.r,c=+cell.dataset.c;
+      pv=mat[r][c]?0:1; mat[r][c]=pv;
+      cell.className=onClass+(pv?' on':'');
+      if(onEdit) onEdit();
+    });
+    el.addEventListener('mouseover',e=>{
+      if(pv===null) return;
+      const cell=e.target.closest('[data-r]'); if(!cell) return;
+      const r=+cell.dataset.r,c=+cell.dataset.c;
+      if(mat[r][c]===pv) return;
+      mat[r][c]=pv; cell.className=onClass+(pv?' on':'');
+      if(onEdit) onEdit();
+    });
+    el.addEventListener('mouseleave',()=>{pv=null;});
+    document.addEventListener('mouseup',()=>{pv=null;});
+  }
+  if(mode==='threading'){
+    el.addEventListener('click',e=>{
+      const cell=e.target.closest('[data-r]'); if(!cell) return;
+      const newR=+cell.dataset.r, c=+cell.dataset.c;
+      for(let r=0;r<rows;r++) if(mat[r][c]){
+        mat[r][c]=0; cells[r*cols+c].className=onClass;
+      }
+      mat[newR][c]=1; cell.className=onClass+' on';
+      if(onEdit) onEdit();
+    });
+  }
+}
+
+// ── Tooltip ───────────────────────────────────────────────────────────
+const ttEl=document.getElementById('tooltip');
+function showTT(msg,x,y){ttEl.textContent=msg;ttEl.style.display='block';ttEl.style.left=(x+12)+'px';ttEl.style.top=(y-26)+'px';}
+function hideTT(){ttEl.style.display='none';}
+function addTooltip(el, msgFn){
+  el.addEventListener('mousemove',e=>{
+    const cell=e.target.closest('[data-r]'); if(!cell) return hideTT();
+    showTT(msgFn(+cell.dataset.r,+cell.dataset.c),e.clientX,e.clientY);
+  });
+  el.addEventListener('mouseleave',hideTT);
+}
+
+// ── Render all ────────────────────────────────────────────────────────
+function recomputeDrawdown(){
+  if(!draft) return;
+  const {X,Y}=draft;
+  const dd=computeDrawdown();
+  const el=document.getElementById('drawdownGrid');
+  el.innerHTML='';
+  el.style.gridTemplateColumns=`repeat(${X},var(--cell))`;
+  el.style.gridTemplateRows=`repeat(${Y},var(--cell))`;
+  // Precompute which cols are unthreaded (no shaft assigned)
+  const unthreaded=new Uint8Array(X);
+  for(let x=0;x<X;x++){
+    if(draft.threadingBin.every(row=>row[x]===0)) unthreaded[x]=1;
+  }
+  for(let y=0;y<Y;y++) for(let x=0;x<X;x++){
+    const div=document.createElement('div');
+    if(unthreaded[x]) div.className='drawdown-cell unthreaded';
+    else div.className='drawdown-cell'+(dd[y][x]?' on':'');
+    div.dataset.r=y; div.dataset.c=x;
+    el.appendChild(div);
+  }
+  addTooltip(el,(y,x)=>{
+    const dd2=computeDrawdown();
+    return `End ${X-x}, Pick ${y+1} — ${dd2[y][x]?'warp up':'weft up'}`;
+  });
+
+  // Build header row (above drawdown — click to select warp ends)
+  const topRow=document.getElementById('dd-top-row');
+  topRow.innerHTML='';
+  for(let x=0;x<X;x++){
+    const div=document.createElement('div');
+    div.className='dd-header-cell';
+    div.style.width='var(--cell)'; div.style.height='10px';
+    div.dataset.x=x;
+    div.title=`End ${X-x} (shift: extend)`;
+    topRow.appendChild(div);
+  }
+  topRow.addEventListener('click',ev=>{
+    const cell=ev.target.closest('[data-x]'); if(!cell) return;
+    const e=X-+cell.dataset.x;
+    if(selAxis!=='warp'||!ev.shiftKey){ setAxis('warp'); selFrom=e; selTo=e; }
+    else { selFrom=Math.min(selFrom,e); selTo=Math.max(selTo,e); }
+    updateSelUI(); applySelHighlight();
+  });
+
+  // Build left col (left of drawdown — click to select weft picks)
+  const leftCol=document.getElementById('dd-left-col');
+  leftCol.innerHTML='';
+  for(let y=0;y<Y;y++){
+    const div=document.createElement('div');
+    div.className='dd-header-cell';
+    div.style.width='10px'; div.style.height='var(--cell)';
+    div.dataset.y=y;
+    div.title=`Pick ${y+1} (shift: extend)`;
+    leftCol.appendChild(div);
+  }
+  leftCol.addEventListener('click',ev=>{
+    const cell=ev.target.closest('[data-y]'); if(!cell) return;
+    const p=+cell.dataset.y+1;
+    if(selAxis!=='weft'||!ev.shiftKey){ setAxis('weft'); selFrom=p; selTo=p; }
+    else { selFrom=Math.min(selFrom,p); selTo=Math.max(selTo,p); }
+    updateSelUI(); applySelHighlight();
+  });
+
+  applySelHighlight();
+}
+
+function renderAll(){
+  if(!draft) return;
+  const {Z,K,X,Y,threadingBin,tieup,treadlingBin}=draft;
+
+  document.getElementById('i-shafts').textContent=Z;
+  document.getElementById('i-treadles').textContent=K;
+  document.getElementById('i-ends').textContent=X;
+  document.getElementById('i-picks').textContent=Y;
+  document.getElementById('lbl-threading').textContent=`Threading (${Z} shafts × ${X} ends)`;
+  document.getElementById('lbl-tieup').textContent=`Tie-up (${Z} shafts × ${K} treadles)`;
+  document.getElementById('lbl-drawdown').textContent=`Drawdown (${Y} picks × ${X} ends)`;
+  document.getElementById('lbl-treadling').textContent=`Treadling (${Y} picks × ${K} treadles)`;
+
+  // Clone each grid element to remove any stale event listeners from previous renders
+  function freshEl(id){
+    const old=document.getElementById(id);
+    const clone=old.cloneNode(false);
+    old.parentNode.replaceChild(clone,old);
+    return clone;
+  }
+
+  // Render exactly as SVD explorer — matrices passed directly, no extra flips
+  renderGrid(freshEl('threadingGrid'), threadingBin, 'threading-cell', 'threading', recomputeDrawdown);
+  addTooltip(document.getElementById('threadingGrid'), (i,x)=>`End ${X-x}, Shaft ${Z-i}`);
+
+  renderGrid(freshEl('tieupGrid'),     tieup,        'tieup-cell',     'toggle',    recomputeDrawdown);
+  addTooltip(document.getElementById('tieupGrid'),     (i,j)=>`Shaft ${Z-i}, Treadle ${j+1}`);
+
+  renderGrid(freshEl('treadlingGrid'), treadlingBin, 'treadling-cell', 'toggle',    recomputeDrawdown);
+  addTooltip(document.getElementById('treadlingGrid'), (y,j)=>`Pick ${y+1}, Treadle ${j+1}`);
+
+  recomputeDrawdown();
+  updateSelUI();
+}
+
+// ── Selection ─────────────────────────────────────────────────────────
+function applySelHighlight(){
+  if(!draft) return;
+  const {X,Y}=draft;
+  const f=selFrom-1, t=selTo-1;
+  // Threading cols are warp cols x, but WIF end = X-x, so end e -> col X-e
+  document.getElementById('threadingGrid').querySelectorAll('[data-c]').forEach(cell=>{
+    const x=+cell.dataset.c;
+    const e=X-1-x; // warp end index (0-based)
+    cell.style.outline=(selAxis==='warp'&&e>=f&&e<=t)?'1px solid rgba(106,172,223,.7)':'';
+  });
+  document.getElementById('drawdownGrid').querySelectorAll('[data-r]').forEach(cell=>{
+    const y=+cell.dataset.r, x=+cell.dataset.c;
+    const e=X-1-x;
+    const hi=(selAxis==='warp'&&e>=f&&e<=t)||(selAxis==='weft'&&y>=f&&y<=t);
+    cell.style.outline=hi?'1px solid rgba(106,172,223,.7)':'';
+  });
+  document.getElementById('treadlingGrid').querySelectorAll('[data-r]').forEach(cell=>{
+    const y=+cell.dataset.r;
+    cell.style.outline=(selAxis==='weft'&&y>=f&&y<=t)?'1px solid rgba(106,172,223,.7)':'';
+  });
+}
+
+function setAxis(a){
+  selAxis=a;
+  document.getElementById('sel-warp').classList.toggle('active',a==='warp');
+  document.getElementById('sel-weft').classList.toggle('active',a==='weft');
+  updateSelUI(); applySelHighlight();
+}
+function updateSelUI(){
+  if(!draft) return;
+  const max=selAxis==='warp'?draft.X:draft.Y;
+  const fi=document.getElementById('sel-from'), ti=document.getElementById('sel-to');
+  fi.max=ti.max=max;
+  selFrom=Math.min(selFrom,max); selTo=Math.min(selTo,max);
+  fi.value=selFrom; ti.value=selTo;
+  const info=document.getElementById('sel-info');
+  info.style.display='block';
+  info.textContent=`${selAxis==='warp'?'Warp':'Weft'} ${selFrom}–${selTo} (${selTo-selFrom+1})`;
+}
+
+// ── Show draft ────────────────────────────────────────────────────────
+function showDraft(){
+  document.getElementById('welcome').style.display='none';
+  document.getElementById('draft-view').style.display='block';
+  document.getElementById('info-box').style.display='block';
+  document.getElementById('manip-box').style.display='block';
+  document.getElementById('insert-box').style.display='block';
+  document.getElementById('btn-export').disabled=false;
+  document.getElementById('btn-save-bmp').disabled=false;
+  if(!document.getElementById('export-name').value){
+    document.getElementById('export-name').value=draft.title||'draft';
+  }
+  document.getElementById('export-name').disabled=false;
+  const sz=parseInt(document.getElementById('cell-size').value)||16;
+  document.documentElement.style.setProperty('--cell',sz+'px');
+}
+
+// ── Load WIF ──────────────────────────────────────────────────────────
+function loadWIF(text,filename){
+  try{
+    draft=parseWIF(text);
+    if(filename) draft.title=filename.replace(/\.wif$/i,'');
+    history=[]; document.getElementById('btn-undo').disabled=true;
+    selFrom=1; selTo=draft.X;
+    document.getElementById('export-name').value=draft.title||'draft';
+    document.getElementById('export-name').disabled=false;
+    document.getElementById('new-shafts').value=draft.Z;
+    document.getElementById('new-treadles').value=draft.K;
+    document.getElementById('new-ends').value=draft.X;
+    document.getElementById('new-picks').value=draft.Y;
+    showDraft(); renderAll();
+    status(`Loaded: ${draft.title} — ${draft.X} ends, ${draft.Y} picks, ${draft.Z} shafts, ${draft.K} treadles`);
+  }catch(e){ status('Parse error: '+e.message); console.error(e); }
+}
+
+// ── File handling ─────────────────────────────────────────────────────
+const fileInput=document.getElementById('file-input');
+const uploadZone=document.getElementById('upload-zone');
+function handleFile(f){ if(!f) return; const r=new FileReader(); r.onload=e=>loadWIF(e.target.result,f.name); r.readAsText(f); }
+uploadZone.addEventListener('click',()=>fileInput.click());
+document.getElementById('btn-open').addEventListener('click',()=>fileInput.click());
+fileInput.addEventListener('change',e=>handleFile(e.target.files[0]));
+uploadZone.addEventListener('dragover',e=>{e.preventDefault();uploadZone.classList.add('drag');});
+uploadZone.addEventListener('dragleave',()=>uploadZone.classList.remove('drag'));
+uploadZone.addEventListener('drop',e=>{e.preventDefault();uploadZone.classList.remove('drag');handleFile(e.dataTransfer.files[0]);});
+
+// ── New draft ─────────────────────────────────────────────────────────
+document.getElementById('btn-new').addEventListener('click',()=>{
+  const Z=+document.getElementById('new-shafts').value;
+  const K=+document.getElementById('new-treadles').value;
+  const X=+document.getElementById('new-ends').value;
+  const Y=+document.getElementById('new-picks').value;
+  draft={title:'New Draft',Z,K,X,Y,
+    threadingBin:Array.from({length:Z},()=>new Array(X).fill(0)),
+    tieup:Array.from({length:Z},()=>new Array(K).fill(0)),
+    treadlingBin:Array.from({length:Y},()=>new Array(K).fill(0))
+  };
+  history=[]; document.getElementById('btn-undo').disabled=true;
+  selFrom=1; selTo=X;
+  showDraft(); renderAll();
+  status(`New draft: ${X} ends × ${Y} picks, ${Z} shafts, ${K} treadles`);
+});
+
+// ── Controls ──────────────────────────────────────────────────────────
+document.getElementById('btn-undo').addEventListener('click',undo);
+document.getElementById('btn-export').addEventListener('click',exportWIF);
+document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();undo();}});
+document.getElementById('cell-size').addEventListener('input',e=>{
+  document.documentElement.style.setProperty('--cell',(parseInt(e.target.value)||16)+'px');
+});
+document.getElementById('sel-warp').addEventListener('click',()=>setAxis('warp'));
+document.getElementById('sel-weft').addEventListener('click',()=>setAxis('weft'));
+document.getElementById('sel-from').addEventListener('input',e=>{selFrom=+e.target.value||1;updateSelUI();applySelHighlight();});
+document.getElementById('sel-to').addEventListener('input',e=>{selTo=+e.target.value||1;updateSelUI();applySelHighlight();});
+document.getElementById('sel-all').addEventListener('click',()=>{
+  if(!draft) return;
+  selFrom=1; selTo=selAxis==='warp'?draft.X:draft.Y;
+  updateSelUI(); applySelHighlight();
+});
+
+// ── Manipulations ─────────────────────────────────────────────────────
+// Selection is in terms of WIF ends/picks (1-based).
+// WIF end e -> internal col x = X-e  (left-right flip)
+// WIF pick p -> internal row y = p-1 (no flip)
+
+function valSel(){
+  if(!draft) return false;
+  const max=selAxis==='warp'?draft.X:draft.Y;
+  if(selFrom<1||selTo<selFrom||selTo>max){showResult('Invalid selection',false);return false;}
+  return true;
+}
+
+document.getElementById('manip-delete').addEventListener('click',()=>{
+  if(!valSel()) return; pushHistory();
+  const {Z,K,X,Y,threadingBin,tieup,treadlingBin}=draft;
+  const f=selFrom-1, t=selTo-1, n=selTo-selFrom+1;
+  if(selAxis==='warp'){
+    // WIF ends f..t (0-based) → internal cols X-1-f .. X-1-t (reversed)
+    // Remove those cols from threadingBin
+    const keepCols=[];
+    for(let x=0;x<X;x++){
+      const e=X-1-x; // WIF end index 0-based
+      if(e<f||e>t) keepCols.push(x);
+    }
+    draft.threadingBin=threadingBin.map(row=>keepCols.map(x=>row[x]));
+    draft.X=keepCols.length;
+    selTo=Math.min(selFrom,draft.X);
+  } else {
+    draft.treadlingBin=[...treadlingBin.slice(0,f),...treadlingBin.slice(t+1)];
+    draft.Y=draft.treadlingBin.length;
+    selTo=Math.min(selFrom,draft.Y);
+  }
+  renderAll(); showResult(`Deleted ${n} ${selAxis==='warp'?'ends':'picks'}`);
+  status('Deleted '+n+(selAxis==='warp'?' ends':' picks'));
+});
+
+document.getElementById('manip-repeat').addEventListener('click',()=>{
+  if(!valSel()) return;
+  const n=+document.getElementById('repeat-n').value;
+  if(n<2||n>99){showResult('Repeat must be 2–99',false);return;}
+  pushHistory();
+  const {Z,K,X,Y,threadingBin,treadlingBin}=draft;
+  const f=selFrom-1, t=selTo-1, count=selTo-selFrom+1;
+  if(selAxis==='warp'){
+    // WIF ends f..t (0-based) → internal cols X-1-f .. X-1-t
+    // Segment cols in internal order (left to right in internal = right to left in WIF)
+    // before: cols 0..X-1-t-1, segment: cols X-1-t..X-1-f, after: cols X-1-f+1..X-1
+    const xRight=X-1-f; // internal col of WIF end f (left end of selection in WIF = right in internal)
+    const xLeft =X-1-t; // internal col of WIF end t (right end of selection in WIF = left in internal)
+    const before=threadingBin.map(row=>row.slice(0,xLeft));
+    const seg   =threadingBin.map(row=>row.slice(xLeft,xRight+1));
+    const after =threadingBin.map(row=>row.slice(xRight+1));
+    // Repeat the whole segment block N times
+    const repeated=Array.from({length:Z},(_,i)=>{
+      const r=[];
+      for(let k=0;k<n;k++) r.push(...seg[i]);
+      return r;
+    });
+    draft.threadingBin=Array.from({length:Z},(_,i)=>[...before[i],...repeated[i],...after[i]]);
+    draft.X=draft.threadingBin[0].length;
+    selTo=selFrom+count*n-1;
+  } else {
+    const seg=treadlingBin.slice(f,t+1);
+    const rep=[]; for(let i=0;i<n;i++) seg.forEach(r=>rep.push([...r]));
+    draft.treadlingBin=[...treadlingBin.slice(0,f),...rep,...treadlingBin.slice(t+1)];
+    draft.Y=draft.treadlingBin.length; selTo=selFrom+count*n-1;
+  }
+  renderAll(); showResult(`Repeated ×${n}`); status(`Repeated ×${n}`);
+});
+
+document.getElementById('manip-thicken').addEventListener('click',()=>{
+  if(!valSel()) return;
+  const n=+document.getElementById('thicken-n').value;
+  if(n<2||n>20){showResult('Thicken must be 2–20',false);return;}
+  pushHistory();
+  const {Z,K,X,Y,threadingBin,treadlingBin}=draft;
+  const f=selFrom-1, t=selTo-1, count=selTo-selFrom+1;
+  if(selAxis==='warp'){
+    // Selection WIF ends f..t (0-based) → internal cols xLeft..xRight
+    const xLeft  = X - selTo;   // leftmost internal col of selection
+    const xRight = X - selFrom; // rightmost internal col of selection
+    const newCols=[];
+    for(let x=0;x<X;x++){
+      newCols.push(x);
+      if(x>=xLeft&&x<=xRight){ for(let r=1;r<n;r++) newCols.push(x); }
+    }
+    draft.threadingBin=threadingBin.map(row=>newCols.map(x=>row[x]));
+    draft.X=newCols.length; selTo=selFrom+count*n-1;
+  } else {
+    const seg=treadlingBin.slice(f,t+1);
+    const thick=[]; seg.forEach(r=>{for(let i=0;i<n;i++) thick.push([...r]);});
+    draft.treadlingBin=[...treadlingBin.slice(0,f),...thick,...treadlingBin.slice(t+1)];
+    draft.Y=draft.treadlingBin.length; selTo=selFrom+count*n-1;
+  }
+  renderAll(); showResult(`Thickened ×${n}`); status(`Thickened ×${n}`);
+});
+// ── Invert treadling ──────────────────────────────────────────────
+document.getElementById('manip-invert-treadling').addEventListener('click',()=>{
+  if(!draft) return;
+  if(selAxis!=='weft'){ showResult('Select weft picks first',false); return; }
+  if(!valSel()) return;
+  pushHistory();
+  const {K,treadlingBin}=draft;
+  const f=selFrom-1, t=selTo-1;
+  for(let y=f;y<=t;y++){
+    for(let j=0;j<K;j++) treadlingBin[y][j]=treadlingBin[y][j]?0:1;
+  }
+  renderAll();
+  showResult(`Inverted treadling for picks ${selFrom}–${selTo}`);
+  status('Inverted treadling');
+});
+
+// ── Save drawdown as BMP ──────────────────────────────────────────
+document.getElementById('btn-save-bmp').addEventListener('click',()=>{
+  if(!draft) return;
+  const {X,Y,threadingBin}=draft;
+  const dd=computeDrawdown();
+
+  // Precompute unthreaded cols
+  const unthreaded=new Uint8Array(X);
+  for(let x=0;x<X;x++) if(threadingBin.every(row=>row[x]===0)) unthreaded[x]=1;
+
+  // 24-bit BMP with pixels at byte 40.
+  // SVD explorer uses getUint32(14) as pixel offset — in a standard BMP that field
+  // holds the DIB header size = 40, so pixels must physically start at byte 40.
+  // We write: BMP file header (14 bytes) + partial DIB (26 bytes) + pixels at byte 40.
+  // The file header pixel-offset field also says 40 so Windows opens it correctly too.
+  const rowSize = Math.ceil(X * 3 / 4) * 4; // 24bpp rows padded to 4-byte boundary
+  const pixelDataSize = rowSize * Y;
+  const fileSize = 40 + pixelDataSize;
+  const buf = new ArrayBuffer(fileSize);
+  const view = new DataView(buf);
+
+  // BMP file header (14 bytes)
+  view.setUint8(0,0x42); view.setUint8(1,0x4D); // 'BM'
+  view.setUint32(2,fileSize,true);               // file size
+  view.setUint32(6,0,true);                      // reserved
+  view.setUint32(10,40,true);                    // pixel offset = 40
+
+  // DIB header fields at standard positions within the file:
+  view.setUint32(14,40,true);    // DIB size = 40 → getUint32(14)=40=pixelOffset ✓
+  view.setInt32(18,X,true);      // width
+  view.setInt32(22,-Y,true);     // height (negative = top-down)
+  view.setUint16(26,1,true);     // color planes
+  view.setUint16(28,24,true);    // bpp = 24
+  // bytes 30-39: zeroed (compression=0 etc.)
+
+  // Pixel data at byte 40
+  let offset = 40;
+  for(let y=0;y<Y;y++){
+    for(let x=0;x<X;x++){
+      let v;
+      if(unthreaded[x]) v=128;        // grey = unthreaded
+      else if(dd[y][x]) v=0;          // black = warp up
+      else v=255;                      // white = weft up
+      view.setUint8(offset++,v);       // B
+      view.setUint8(offset++,v);       // G
+      view.setUint8(offset++,v);       // R
+    }
+    for(let p=X*3;p<rowSize;p++) view.setUint8(offset++,0); // row padding
+  }
+
+  const blob=new Blob([buf],{type:'image/bmp'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  const name=(document.getElementById('export-name').value.trim()||'drawdown').replace(/[^a-z0-9]/gi,'_');
+  a.href=url; a.download=name+'_drawdown.bmp';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+  status('Saved '+a.download);
+});
+
+// ── Flip ───────────────────────────────────────────────────────────
+document.getElementById('manip-flip').addEventListener('click',()=>{
+  if(!valSel()) return;
+  pushHistory();
+  const {Z,K,X,Y,threadingBin,treadlingBin}=draft;
+  const f=selFrom-1, t=selTo-1, count=selTo-selFrom+1;
+
+  if(selAxis==='warp'){
+    // Selection WIF ends f..t (0-based) → internal cols xLeft..xRight
+    const xLeft  = X - selTo;   // X - (t+1)
+    const xRight = X - selFrom; // X - (f+1)
+    // Reverse the segment cols within threadingBin
+    draft.threadingBin = threadingBin.map(row => {
+      const newRow = [...row];
+      for(let i=0; i<count; i++) newRow[xLeft+i] = row[xRight-i];
+      return newRow;
+    });
+    showResult(`Flipped ${count} warp end${count>1?'s':''}`);
+  } else {
+    // Reverse the segment rows within treadlingBin
+    const before = treadlingBin.slice(0, f);
+    const seg    = treadlingBin.slice(f, t+1).reverse().map(r=>[...r]);
+    const after  = treadlingBin.slice(t+1);
+    draft.treadlingBin = [...before, ...seg, ...after];
+    showResult(`Flipped ${count} weft pick${count>1?'s':''}`);
+  }
+
+  renderAll();
+  status(`Flipped ${selAxis==='warp'?'warp ends':'weft picks'}`);
+});
+
+// ── Move ───────────────────────────────────────────────────────────
+let moveSide='before';
+function setMoveSide(s){
+  moveSide=s;
+  document.getElementById('move-before').classList.toggle('active',s==='before');
+  document.getElementById('move-after').classList.toggle('active',s==='after');
+}
+document.getElementById('move-before').addEventListener('click',()=>setMoveSide('before'));
+document.getElementById('move-after').addEventListener('click',()=>setMoveSide('after'));
+
+document.getElementById('manip-move').addEventListener('click',()=>{
+  if(!valSel()) return;
+  const dest=+document.getElementById('move-pos').value;
+  const {Z,K,X,Y,threadingBin,treadlingBin}=draft;
+  const f=selFrom-1, t=selTo-1, count=selTo-selFrom+1;
+  const max=selAxis==='warp'?X:Y;
+  if(dest<1||dest>max){
+    showMoveResult('Destination out of range',false); return;
+  }
+  // Check destination is not inside the selection
+  if(dest>=selFrom&&dest<=selTo){
+    showMoveResult('Destination is inside selection',false); return;
+  }
+  pushHistory();
+
+  if(selAxis==='warp'){
+    // Work entirely in internal col space.
+    // WIF end e (1-based) → internal col x = X-e
+    // Selection: WIF ends selFrom..selTo → internal cols X-selTo .. X-selFrom
+    // These are contiguous cols; xRight=X-selFrom (rightmost), xLeft=X-selTo (leftmost)
+    const xLeft  = X - selTo;    // leftmost internal col of selection
+    const xRight = X - selFrom;  // rightmost internal col of selection
+
+    // Destination: WIF end dest → internal col xDest = X-dest
+    const xDest = X - dest;
+
+    // Build new col order: all cols 0..X-1 reordered
+    // Extract segment cols [xLeft..xRight], rest = everything else in order
+    const seg  = Array.from({length: count}, (_,i) => xLeft + i);
+    const rest = [];
+    for(let x=0; x<X; x++) if(x<xLeft||x>xRight) rest.push(x);
+
+    // Find where xDest lands in rest
+    const destInRest = rest.indexOf(xDest);
+    const insertAt = moveSide==='before' ? destInRest : destInRest+1;
+    const newOrder = [...rest.slice(0,insertAt), ...seg, ...rest.slice(insertAt)];
+
+    draft.threadingBin = threadingBin.map(row => newOrder.map(x => row[x]));
+    draft.X = newOrder.length;
+
+    // Selection follows: moved segment is now at insertAt..insertAt+count-1 in internal
+    // Convert back to WIF end numbers: WIF end = X - internalCol (using new X = same)
+    // The leftmost internal col of the moved segment in newOrder is newOrder[insertAt]=xLeft
+    // WIF end for internal col x = X - x; leftmost moved col = xLeft → WIF end X-xLeft = selTo
+    // rightmost = xRight → WIF end X-xRight = selFrom
+    // So in WIF space the moved block still spans selFrom..selTo, just repositioned
+    const newXLeft = newOrder[insertAt];
+    const newXRight = newOrder[insertAt + count - 1];
+    selTo   = X - Math.min(newXLeft, newXRight);
+    selFrom = X - Math.max(newXLeft, newXRight);
+  } else {
+    // Picks: no flip, pick p = row p-1
+    const seg=treadlingBin.slice(f,t+1).map(r=>[...r]);
+    const rest=[...treadlingBin.slice(0,f),...treadlingBin.slice(t+1)];
+    const destRow=dest-1; // 0-based pick index
+    // dest pick index in rest array (shifted if dest > t)
+    const restIdx=dest>t ? destRow-count : destRow;
+    const insertAt=moveSide==='before'?restIdx:restIdx+1;
+    draft.treadlingBin=[...rest.slice(0,insertAt),...seg,...rest.slice(insertAt)];
+    draft.Y=draft.treadlingBin.length;
+    selFrom=insertAt+1; selTo=insertAt+count;
+  }
+
+  renderAll();
+  showMoveResult(`Moved ${count} ${selAxis==='warp'?'end'+(count>1?'s':''):'pick'+(count>1?'s':'')} ${moveSide} position ${dest}`);
+  status(`Moved ${count} ${selAxis==='warp'?'ends':'picks'}`);
+});
+
+function showMoveResult(msg,ok=true){
+  const el=document.getElementById('move-result');
+  el.textContent=msg; el.className='result '+(ok?'ok':'err'); el.style.display='block';
+  setTimeout(()=>el.style.display='none',3000);
+}
+
+// ── Insert Blank ───────────────────────────────────────────────────
+let insAxis='warp', insSide='before';
+
+function setInsAxis(a){
+  insAxis=a;
+  document.getElementById('ins-warp').classList.toggle('active',a==='warp');
+  document.getElementById('ins-weft').classList.toggle('active',a==='weft');
+  if(draft){
+    const max=a==='warp'?draft.X:draft.Y;
+    document.getElementById('ins-pos').max=max;
+    document.getElementById('ins-pos').value=Math.min(+document.getElementById('ins-pos').value,max);
+  }
+}
+function setInsSide(s){
+  insSide=s;
+  document.getElementById('ins-before').classList.toggle('active',s==='before');
+  document.getElementById('ins-after').classList.toggle('active',s==='after');
+}
+document.getElementById('ins-warp').addEventListener('click',()=>setInsAxis('warp'));
+document.getElementById('ins-weft').addEventListener('click',()=>setInsAxis('weft'));
+document.getElementById('ins-before').addEventListener('click',()=>setInsSide('before'));
+document.getElementById('ins-after').addEventListener('click',()=>setInsSide('after'));
+
+document.getElementById('ins-do').addEventListener('click',()=>{
+  if(!draft) return;
+  const pos=+document.getElementById('ins-pos').value;
+  const count=+document.getElementById('ins-count').value;
+  if(count<1||count>200){
+    const el=document.getElementById('ins-result');
+    el.textContent='Count must be 1–200'; el.className='result err'; el.style.display='block';
+    setTimeout(()=>el.style.display='none',3000); return;
+  }
+  const {Z,K,X,Y,threadingBin,treadlingBin}=draft;
+  const max=insAxis==='warp'?X:Y;
+  if(pos<1||pos>max){
+    const el=document.getElementById('ins-result');
+    el.textContent='Position out of range'; el.className='result err'; el.style.display='block';
+    setTimeout(()=>el.style.display='none',3000); return;
+  }
+  pushHistory();
+
+  if(insAxis==='warp'){
+    // WIF end pos → internal col x = X - pos (left-right flip)
+    // "before" WIF end pos = higher internal col (insert after xAt in internal)
+    // "after"  WIF end pos = lower internal col (insert before xAt in internal)
+    const xAt = X - pos;
+    const insertAt = insSide==='before' ? xAt : xAt+1;
+    const blankCol = new Array(count).fill(0);
+    draft.threadingBin = threadingBin.map(row => [
+      ...row.slice(0, insertAt),
+      ...blankCol,
+      ...row.slice(insertAt)
+    ]);
+    draft.X = draft.threadingBin[0].length;
+  } else {
+    // Pick pos → internal row y = pos-1 (no flip)
+    const insertAt = insSide==='before' ? pos-1 : pos;
+    const blankRows = Array.from({length:count}, ()=>new Array(K).fill(0));
+    draft.treadlingBin = [
+      ...treadlingBin.slice(0, insertAt),
+      ...blankRows,
+      ...treadlingBin.slice(insertAt)
+    ];
+    draft.Y = draft.treadlingBin.length;
+  }
+
+  // Update ins-pos max and new draft fields
+  document.getElementById('ins-pos').max = insAxis==='warp'?draft.X:draft.Y;
+  document.getElementById('new-ends').value=draft.X;
+  document.getElementById('new-picks').value=draft.Y;
+
+  renderAll();
+  const el=document.getElementById('ins-result');
+  el.textContent=`Inserted ${count} blank ${insAxis==='warp'?'end'+(count>1?'s':''):'pick'+(count>1?'s':'')} ${insSide} ${insAxis==='warp'?'end':'pick'} ${pos}`;
+  el.className='result ok'; el.style.display='block';
+  setTimeout(()=>el.style.display='none',3000);
+  status(`Inserted ${count} blank ${insAxis==='warp'?'ends':'picks'}`);
+});
+</script>
+</body>
+</html>
